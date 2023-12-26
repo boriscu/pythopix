@@ -41,7 +41,7 @@ If you don't specify a `model_path`, pythopix will automatically use a default Y
 
 ### Additional Functionalities
 
-pythopix also provides additional utility functions for custom data handling and processing. Refer to our [documentation](#) for detailed information on these utilities.
+pythopix also provides additional utility functions for custom data handling and processing. Refer to our [documentation](#https://github.com/boriscu/pythopix/blob/main/docs/DOCUMENTATION.md) for detailed information on these utilities.
 
 ## Requirements
 
