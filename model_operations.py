@@ -91,7 +91,7 @@ def segregate_images(
         "Segregating data...",
         style=INFO_STYLE,
     )
-    for i, image_data in tqdm(enumerate(image_data_list)):
+    for i, image_data in tqdm.tqdm(enumerate(image_data_list)):
         image_basename = os.path.basename(image_data.image_path)
         label_path = image_data.image_path.rsplit(".", 1)[0] + ".txt"
 

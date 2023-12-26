@@ -52,7 +52,7 @@ def export_to_csv(
             "Writing data to csv...",
             style=INFO_STYLE,
         )
-        for image_data in tqdm(image_data_list):
+        for image_data in tqdm.tqdm(image_data_list):
             writer.writerow(
                 [
                     image_data.image_path,
