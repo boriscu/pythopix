@@ -7,10 +7,11 @@ from ultralytics import YOLO
 from .data_handling import export_to_csv
 from .model_operations import process_image, segregate_images
 from .utils import custom_sort_key
+from typing import Optional
 
 
 def evaluate_dataset(
-    model_path: str | None,
+    model_path: Optional[str],
     test_images_folder: str,
     num_images: int = 100,
     verbose: bool = False,
