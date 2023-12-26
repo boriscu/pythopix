@@ -69,9 +69,19 @@ def segregate_images(
     num_images (int): Number of top images to copy to the additional augmentation folder.
     """
 
-    additional_augmentation_folder = "additional_augmentation"
-    no_additional_augmentation_folder = "no_additional_augmentation"
+    parent_folder = "pythopix_results"
+    additional_augmentation_folder = os.path.join(
+        parent_folder, "additional_augmentation"
+    )
+    no_additional_augmentation_folder = os.path.join(
+        parent_folder, "no_additional_augmentation"
+    )
 
+    # Create parent directory if it doesn't exist
+    if not os.path.exists(parent_folder):
+        os.makedirs(parent_folder)
+
+    # Create subdirectories
     os.makedirs(additional_augmentation_folder, exist_ok=True)
     os.makedirs(no_additional_augmentation_folder, exist_ok=True)
 
