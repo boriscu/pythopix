@@ -50,8 +50,6 @@ pythopix also provides additional utility functions for custom data handling and
 - tqdm
 - Ultralytics YOLO
 
-These dependencies are automatically installed when you install pythopix via pip.
-
 ## Contributing
 
 Contributions to pythopix are welcome! Please refer to our contribution guidelines for details on how to contribute.

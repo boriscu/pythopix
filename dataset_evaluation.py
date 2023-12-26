@@ -7,7 +7,7 @@ from ultralytics import YOLO
 from .data_handling import export_to_csv
 from .model_operations import process_image, segregate_images
 from .utils import custom_sort_key
-from typing import Optional
+from typing import Optional, List
 
 
 def evaluate_dataset(
@@ -17,7 +17,7 @@ def evaluate_dataset(
     verbose: bool = False,
     print_results: bool = False,
     copy_images: bool = False,
-) -> None:
+) -> List[dict]:
     """
     Main function to execute the YOLO model analysis script.
 
@@ -28,6 +28,9 @@ def evaluate_dataset(
     verbose (bool): Enable verbose output for model predictions.
     print_results (bool): Print the sorted image data results.
     copy_images (bool): Copy images to a separate folder for additional augmentation.
+
+    Returns:
+    List[dict]: A list of dictionaries containing sorted image data based on the evaluation.
     """
 
     start_time = time.time()
