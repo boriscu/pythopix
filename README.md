@@ -2,7 +2,7 @@
 
 # pythopix
 
-PythoPix is a Python library for evaluating image datasets using YOLO models. It's designed to make the process of image data analysis and object detection straightforward and accessible, even for those who may not have a pre-trained YOLO model.
+PythoPix is a Python library designed for evaluating image datasets using YOLO models. It simplifies image data analysis and object detection, making it accessible even for users without a pre-trained YOLO model. The core feature of PythoPix is its ability to re-evaluate the training dataset with the trained model, highlighting false positives and negatives. This functionality is crucial for identifying potential errors or biases in the original dataset, allowing users to understand where additional data augmentation or correction might be necessary.
 
 ## Features
 
@@ -37,11 +37,11 @@ evaluate_dataset(
 )
 ```
 
-If you don't specify a `model_path`, OptiPyth will automatically use a default YOLO model.
+If you don't specify a `model_path`, pythopix will automatically use a default YOLO model.
 
 ### Additional Functionalities
 
-OptiPyth also provides additional utility functions for custom data handling and processing. Refer to our [documentation](#) for detailed information on these utilities.
+pythopix also provides additional utility functions for custom data handling and processing. Refer to our [documentation](#) for detailed information on these utilities.
 
 ## Requirements
 
