@@ -122,10 +122,6 @@ The `labels_operations` module in PythoPix provides tools for extracting, conver
   convert_json_to_txt_labels(json_label_files)
   ```
 
-### Model Operations Module Documentation
-
----
-
 ## Model Operations
 
 The `model_operations` module in PythoPix includes functions for processing images with a YOLO model, calculating Intersection over Union (IoU) for bounding boxes, and segregating images based on the need for additional augmentation.
