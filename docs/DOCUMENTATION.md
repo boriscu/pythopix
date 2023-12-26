@@ -24,7 +24,7 @@
 
 This module focuses on handling and exporting image data, particularly useful in post-analysis data management.
 
-### : `export_to_csv`
+### `export_to_csv`
 
 - **Description**: Exports a list of `ImageData` objects to a CSV file.
 - **Parameters**:
