@@ -1,6 +1,8 @@
+![pythopix Logo](https://github.com/boriscu/pythopix/blob/main/docs/pythopix.png)
+
 # pythopix
 
-OptiPyth is a Python library for evaluating image datasets using YOLO models. It's designed to make the process of image data analysis and object detection straightforward and accessible, even for those who may not have a pre-trained YOLO model.
+PythoPix is a Python library for evaluating image datasets using YOLO models. It's designed to make the process of image data analysis and object detection straightforward and accessible, even for those who may not have a pre-trained YOLO model.
 
 ## Features
 
