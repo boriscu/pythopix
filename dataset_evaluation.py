@@ -11,8 +11,8 @@ from typing import Optional
 
 
 def evaluate_dataset(
-    model_path: Optional[str],
     test_images_folder: str,
+    model_path: Optional[str] = None,
     num_images: int = 100,
     verbose: bool = False,
     print_results: bool = False,
