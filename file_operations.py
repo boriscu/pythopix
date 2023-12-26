@@ -18,7 +18,9 @@ def save_predictions(
     """
 
     base_name = os.path.basename(image_path).rsplit(".", 1)[0]
-    prediction_file = os.path.join("additional_augmentation", base_name + ".txt")
+    prediction_file = os.path.join(
+        "pythopix_results/additional_augmentation", base_name + ".txt"
+    )
 
     with open(prediction_file, "w") as file:
         for cls, box in zip(predicted_classes, predicted_boxes):
