@@ -4,9 +4,9 @@ import torch
 import tqdm
 
 from ultralytics import YOLO
-from data_handling import export_to_csv
-from model_operations import process_image, segregate_images
-from utils import custom_sort_key
+from .data_handling import export_to_csv
+from .model_operations import process_image, segregate_images
+from .utils import custom_sort_key
 
 
 def evaluate_dataset(
