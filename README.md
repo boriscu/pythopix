@@ -1,4 +1,4 @@
-![pythopix Logo](https://github.com/boriscu/pythopix/blob/main/docs/pythopix.png)
+![pythopix Logo](https://raw.githubusercontent.com/boriscu/pythopix/main/docs/pythopix.png)
 
 # pythopix
 
