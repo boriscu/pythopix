@@ -66,3 +66,5 @@ def evaluate_dataset(
     end_time = time.time()
     duration = end_time - start_time
     print(f"Script executed successfully in {duration:.2f} seconds.")
+
+    return sorted_image_data
