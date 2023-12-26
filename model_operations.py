@@ -4,9 +4,11 @@ from typing import List, Tuple
 import torch
 from torch import Tensor
 from ultralytics import YOLO
+import tqdm
 
 from .data_handling import ImageData
 from .file_operations import save_predictions
+from .theme import console, INFO_STYLE, SUCCESS_STYLE
 
 
 def bbox_iou(box1: Tensor, box2: Tensor) -> Tensor:
@@ -85,7 +87,11 @@ def segregate_images(
     os.makedirs(additional_augmentation_folder, exist_ok=True)
     os.makedirs(no_additional_augmentation_folder, exist_ok=True)
 
-    for i, image_data in enumerate(image_data_list):
+    console.print(
+        "Segregating data...",
+        style=INFO_STYLE,
+    )
+    for i, image_data in tqdm(enumerate(image_data_list)):
         image_basename = os.path.basename(image_data.image_path)
         label_path = image_data.image_path.rsplit(".", 1)[0] + ".txt"
 
@@ -133,6 +139,11 @@ def segregate_images(
                     no_additional_augmentation_folder, os.path.basename(label_path)
                 ),
             )
+
+    console.print(
+        "Segragation successful",
+        style=SUCCESS_STYLE,
+    )
 
 
 def process_image(

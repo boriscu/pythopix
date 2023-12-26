@@ -8,6 +8,7 @@ from .data_handling import export_to_csv
 from .model_operations import process_image, segregate_images
 from .utils import custom_sort_key
 from typing import Optional, List
+from .theme import console, INFO_STYLE, SUCCESS_STYLE
 
 
 def evaluate_dataset(
@@ -42,7 +43,10 @@ def evaluate_dataset(
     ]
 
     if model_path is None or not os.path.exists(model_path):
-        print("Model path not provided or not found. Using default YOLO model.")
+        console.print(
+            "Model path not provided or not found. Using default YOLO model.",
+            style=INFO_STYLE,
+        )
         model = YOLO("yolov8n")
     else:
         model = YOLO(model_path)
@@ -68,6 +72,8 @@ def evaluate_dataset(
 
     end_time = time.time()
     duration = end_time - start_time
-    print(f"Script executed successfully in {duration:.2f} seconds.")
+    console.print(
+        f"Script executed successfully in {duration:.2f} seconds.", style=SUCCESS_STYLE
+    )
 
     return sorted_image_data

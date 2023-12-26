@@ -4,6 +4,7 @@ import shutil
 import json
 from tqdm import tqdm
 import numpy as np
+from .theme import ERROR_STYLE, console, INFO_STYLE, SUCCESS_STYLE
 
 
 def extract_label_files(source_folder: str, label_type: str = "txt") -> List[str]:
@@ -19,7 +20,10 @@ def extract_label_files(source_folder: str, label_type: str = "txt") -> List[str
 
     """
     if not os.path.exists(source_folder):
-        print("Error: The source folder for label extraction does not exist.")
+        console.print(
+            "Error: The source folder for label extraction does not exist.",
+            style=ERROR_STYLE,
+        )
         raise Exception("The source folder does not exist.")
 
     file_extension = ".txt" if label_type == "txt" else ".json"
@@ -73,6 +77,10 @@ def convert_txt_to_json_labels(
     if not os.path.exists(destination_folder):
         os.makedirs(destination_folder)
 
+    console.print(
+        "Converting txt to json labels...",
+        style=INFO_STYLE,
+    )
     for txt_file_path in tqdm(txt_label_files):
         base_name = os.path.basename(txt_file_path).replace(".txt", "")
         json_filename = f"{base_name}.json"
@@ -119,6 +127,10 @@ def convert_txt_to_json_labels(
 
         with open(path_json, "w") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
+    console.print(
+        "Conversion successful.",
+        style=SUCCESS_STYLE,
+    )
 
 
 def convert_json_to_txt_labels(
@@ -140,6 +152,11 @@ def convert_json_to_txt_labels(
         count += 1
 
     os.makedirs(destination_folder)
+
+    console.print(
+        "Converting json to txt labels...",
+        style=INFO_STYLE,
+    )
 
     for json_file_path in tqdm(json_label_files):
         with open(json_file_path, "r") as file:
@@ -173,3 +190,8 @@ def convert_json_to_txt_labels(
         txt_filename = os.path.basename(json_file_path).replace(".json", ".txt")
         path_out = os.path.join(destination_folder, txt_filename)
         np.savetxt(path_out, labels, fmt="%f")
+
+    console.print(
+        "Conversion successful.",
+        style=SUCCESS_STYLE,
+    )

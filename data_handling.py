@@ -1,5 +1,7 @@
 import csv
+import tqdm
 from typing import List
+from .theme import console, INFO_STYLE
 
 
 class ImageData:
@@ -46,8 +48,11 @@ def export_to_csv(
         writer = csv.writer(file)
 
         writer.writerow(["ImagePath", "FalsePositives", "FalseNegatives", "BoxLoss"])
-
-        for image_data in image_data_list:
+        console.print(
+            "Writing data to csv...",
+            style=INFO_STYLE,
+        )
+        for image_data in tqdm(image_data_list):
             writer.writerow(
                 [
                     image_data.image_path,
