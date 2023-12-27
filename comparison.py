@@ -59,7 +59,7 @@ def add_bboxes_to_image(
     img_height (int): The height of the image.
 
     Returns:
-    List[List[List[int]]]: The image data with bounding boxes drawn on it.
+    List[List[List[int]]]: The image data in OpenCV format (BGR).
     """
     if not os.path.exists(label_file):
         console.print("Label file not found. Box will not be drawn.", style=ERROR_STYLE)

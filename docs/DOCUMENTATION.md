@@ -171,3 +171,80 @@ The `model_operations` module in PythoPix includes functions for processing imag
 
   image_data, predictions = process_image("path/to/image.jpg", model)
   ```
+
+## Comparison
+
+The `comparison` module in PythoPix includes functions for comparing original and predicted labels of images, primarily used for visualizing and assessing the performance of object detection models like YOLO.
+
+### `compare_labels`
+
+- **Description**: Compares the original and predicted labels for a single image and displays or saves the comparison.
+- **Parameters**:
+  - `image_path (str)`: Path to the original image file.
+  - `predicted_label_path (str)`: Path to the predicted label file in YOLO format.
+  - `original_label_path (Optional[str])`: Path to the original label file. If not provided, it attempts to find a label file with the same name as the image in its directory. Defaults to None.
+  - `show (bool)`: Flag to display the plot. Defaults to True.
+  - `save (bool)`: Flag to save the figure. Defaults to False.
+- **Usage**:
+
+  ```python
+  from pythopix.comparison import compare_single_image_labels
+
+  compare_labels('/path/to/image.png', '/path/to/predicted_label.txt', show=True, save=False)
+  ```
+
+### `compare_folder_labels`
+
+- **Description**: Compares original images labels in a folder with their corresponding predicted labels and optionally shows or saves the comparisons.
+- **Parameters**:
+  - `image_folder (str)`: Path to the folder containing images with their original labels.
+  - `labels (List[str])`: List of paths to predicted label files.
+  - `limit (Optional[int])`: Maximum number of images to process. If None, all images in the folder are processed. Defaults to None.
+  - `show (bool)`: Flag to display the comparison plot for each image. Defaults to False.
+  - `save (bool)`: Flag to save the comparison plot for each image. Defaults to True.
+- **Usage**:
+
+  ```python
+  from pythopix.labels_operations import extract_label_files
+  from pythopix.comparison import compare_folder_labels
+
+  labels_txt = extract_label_files(
+      "pythopix_results/additional_augmentation", label_type="txt"
+  )
+  compare_folder_labels('/path/to/image_folder', labels=labels_txt, limit=5, show=True, save=True)
+  ```
+
+### `yolo_to_bbox`
+
+- **Description**: Converts bounding box data from YOLO format to pixel coordinates.
+- **Parameters**:
+  - `yolo_data (List[float])`: A list containing four float values representing the bounding box in YOLO format: [x_center, y_center, width, height].
+  - `img_width (int)`: The width of the image in pixels.
+  - `img_height (int)`: The height of the image in pixels.
+- **Returns**:
+  - `Tuple[int, int, int, int]`: A tuple of four integer values representing the bounding box in pixel coordinates: (xmin, ymin, xmax, ymax).
+- **Usage**:
+
+  ```python
+  from pythopix.comparison import yolo_to_bbox
+
+  bbox = yolo_to_bbox([0.5, 0.5, 0.1, 0.1], img_width, img_height)
+  ```
+
+### `add_bboxes_to_image`
+
+- **Description**: Draws bounding boxes on an image based on YOLO format label data.
+- **Parameters**:
+  - `image (List[List[List[int]]])`: The image data in OpenCV format (BGR).
+  - `label_file (str)`: Path to the label file containing bounding boxes in YOLO format.
+  - `img_width (int)`: The width of the image in pixels.
+  - `img_height (int)`: The height of the image in pixels.
+- **Returns**:
+  - `List[List[List[int]]]`: The image data with bounding boxes drawn, in OpenCV format (BGR).
+- **Usage**:
+
+  ```python
+  from pythopix.comparison import add_bboxes_to_image
+
+  image_with_boxes = add_bboxes_to_image(image, '/path/to/label_file.txt', img_width, img_height)
+  ```

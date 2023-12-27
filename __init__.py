@@ -9,6 +9,12 @@ from .labels_operations import (
     convert_json_to_txt_labels,
     convert_txt_to_json_labels,
 )
+from .comparison import (
+    compare_labels,
+    compare_folder_labels,
+    yolo_to_bbox,
+    add_bboxes_to_image,
+)
 
 __all__ = [
     "evaluate_dataset",
@@ -20,4 +26,8 @@ __all__ = [
     "save_extracted_labels",
     "convert_json_to_txt_labels",
     "convert_txt_to_json_labels",
+    "yolo_to_bbox",
+    "add_bboxes_to_image",
+    "compare_labels",
+    "compare_folder_labels",
 ]
