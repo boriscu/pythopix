@@ -72,12 +72,24 @@ def segregate_images(
     """
 
     parent_folder = "pythopix_results"
+
     additional_augmentation_folder = os.path.join(
         parent_folder, "additional_augmentation"
     )
+    count = 1
+    while os.path.exists(additional_augmentation_folder):
+        additional_augmentation_folder = f"{additional_augmentation_folder}_{count}"
+        count += 1
+
     no_additional_augmentation_folder = os.path.join(
         parent_folder, "no_additional_augmentation"
     )
+    count = 1
+    while os.path.exists(no_additional_augmentation_folder):
+        no_additional_augmentation_folder = (
+            f"{no_additional_augmentation_folder}_{count}"
+        )
+        count += 1
 
     # Create parent directory if it doesn't exist
     if not os.path.exists(parent_folder):
