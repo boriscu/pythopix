@@ -4,7 +4,7 @@ from typing import List, Tuple
 import torch
 from torch import Tensor
 from ultralytics import YOLO
-import tqdm
+from tqdm import tqdm
 
 from .data_handling import ImageData
 from .file_operations import save_predictions
@@ -91,7 +91,7 @@ def segregate_images(
         "Segregating data...",
         style=INFO_STYLE,
     )
-    for i, image_data in tqdm.tqdm(enumerate(image_data_list)):
+    for i, image_data in tqdm(enumerate(image_data_list), desc="Processing images"):
         image_basename = os.path.basename(image_data.image_path)
         label_path = image_data.image_path.rsplit(".", 1)[0] + ".txt"
 
