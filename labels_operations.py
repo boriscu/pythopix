@@ -85,9 +85,10 @@ def extract_label_files(source_folder: str, label_type: str = "txt") -> List[str
     file_extension = ".txt" if label_type == "txt" else ".json"
     label_files = [
         os.path.join(source_folder, filename)
-        for filename in os.listdir(source_folder)
+        for filename in tqdm(os.listdir(source_folder), desc="Extracting label files")
         if filename.endswith(file_extension)
     ]
+    console.print("Successfuly extracted labels", style=SUCCESS_STYLE)
     return label_files
 
 
