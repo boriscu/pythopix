@@ -1,10 +1,66 @@
 import os
-from typing import List, Dict
+from typing import List, Dict, NamedTuple
 import shutil
 import json
 from tqdm import tqdm
 import numpy as np
 from .theme import ERROR_STYLE, console, INFO_STYLE, SUCCESS_STYLE
+
+
+class Label(NamedTuple):
+    """
+    Represents a label in YOLO format.
+
+    Attributes:
+        class_id (int): The class ID of the object in the bounding box.
+        x_center (float): The x-coordinate of the center of the bounding box,
+                          normalized to the image width.
+        y_center (float): The y-coordinate of the center of the bounding box,
+                          normalized to the image height.
+        width (float): The width of the bounding box, normalized to the image width.
+        height (float): The height of the bounding box, normalized to the image height.
+
+    The coordinates and dimensions are normalized relative to the image dimensions,
+    meaning they are expressed as a fraction of the image's width and height.
+    For instance, an x_center of 0.5 would mean the center of the box is at the
+    middle of the image width.
+    """
+
+    class_id: int
+    x_center: float
+    y_center: float
+    width: float
+    height: float
+
+
+def read_yolo_labels(file_path: str) -> List[Label]:
+    """
+    Reads a YOLO label file and returns a list of labels.
+
+    Each line in the YOLO label file should have the format:
+    "class_id center_x center_y width height"
+
+    Args:
+    file_path (str): Path to the YOLO label file.
+
+    Returns:
+    List[Label]: A list of Label objects parsed from the file.
+    """
+    labels = []
+
+    if not os.path.exists(file_path):
+        console.print(
+            "Can't parse labels from file, no file named: {file_path} found",
+            style=ERROR_STYLE,
+        )
+        raise FileNotFoundError(f"File not found: {file_path}")
+
+    with open(file_path, "r") as file:
+        for line in file:
+            class_id, x_center, y_center, width, height = map(float, line.split())
+            labels.append(Label(int(class_id), x_center, y_center, width, height))
+
+    return labels
 
 
 def extract_label_files(source_folder: str, label_type: str = "txt") -> List[str]:

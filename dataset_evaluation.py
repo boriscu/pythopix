@@ -9,6 +9,7 @@ from .model_operations import process_image, segregate_images
 from .utils import custom_sort_key
 from typing import Optional, List
 from .theme import console, INFO_STYLE, SUCCESS_STYLE
+from .labels_operations import Label
 
 
 def evaluate_dataset(
@@ -77,3 +78,23 @@ def evaluate_dataset(
     )
 
     return sorted_image_data
+
+
+def calculate_bounding_box_area(label: Label) -> float:
+    """
+    Calculate the surface area of a bounding box from a Label object.
+
+    The Label object contains class_id, center_x, center_y, width, and height.
+    This function calculates the surface area of the bounding box defined by the
+    width and height in the Label object.
+
+    Args:
+    label (Label): A Label object representing the bounding box and class ID.
+
+    Returns:
+    float: The surface area of the bounding box.
+    """
+
+    area = label.width * label.height
+
+    return area
