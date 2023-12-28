@@ -2,6 +2,9 @@ from .dataset_evaluation import (
     evaluate_dataset,
     calculate_bb_area,
     plot_bb_distribution,
+    calculate_segmented_metrics,
+    plot_metrics_by_segment,
+    save_segmented_metrics_to_csv,
 )
 from .data_handling import export_to_csv
 from .model_operations import process_image, segregate_images
@@ -37,4 +40,7 @@ __all__ = [
     "calculate_bb_area",
     "plot_bb_distribution",
     "read_yolo_labels",
+    "save_segmented_metrics_to_csv",
+    "plot_metrics_by_segment",
+    "calculate_segmented_metrics",
 ]

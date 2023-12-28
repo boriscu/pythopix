@@ -257,7 +257,7 @@ def plot_metrics_by_segment(
 
     # Plotting False Positives
     plt.figure(figsize=(10, 6))
-    plt.bar(segments, false_positives, color="blue")
+    plt.bar(segments, false_positives, color="#56baf0")
     plt.xlabel("Segments")
     plt.ylabel("False Positives")
     plt.title("False Positives by Segment")
@@ -269,7 +269,7 @@ def plot_metrics_by_segment(
 
     # Plotting False Negatives
     plt.figure(figsize=(10, 6))
-    plt.bar(segments, false_negatives, color="green")
+    plt.bar(segments, false_negatives, color="#a3e38c")
     plt.xlabel("Segments")
     plt.ylabel("False Negatives")
     plt.title("False Negatives by Segment")
@@ -281,7 +281,7 @@ def plot_metrics_by_segment(
 
     # Plotting Box Loss
     plt.figure(figsize=(10, 6))
-    plt.bar(segments, box_losses, color="red")
+    plt.bar(segments, box_losses, color="#050c26")
     plt.xlabel("Segments")
     plt.ylabel("Box Loss")
     plt.title("Box Loss by Segment")
@@ -292,7 +292,7 @@ def plot_metrics_by_segment(
     plt.show()
 
 
-def save_metrics_to_csv(
+def save_segmented_metrics_to_csv(
     metrics_by_segment: Dict[str, Tuple[float, float, float]]
 ) -> None:
     """
