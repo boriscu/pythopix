@@ -2,14 +2,15 @@ import os
 import time
 import torch
 import tqdm
-
+import matplotlib.pyplot as plt
 from ultralytics import YOLO
+from typing import Optional, List
+
 from .data_handling import export_to_csv
 from .model_operations import process_image, segregate_images
 from .utils import custom_sort_key
-from typing import Optional, List
 from .theme import console, INFO_STYLE, SUCCESS_STYLE
-from .labels_operations import Label
+from .labels_operations import Label, read_yolo_labels
 
 
 def evaluate_dataset(
@@ -80,7 +81,7 @@ def evaluate_dataset(
     return sorted_image_data
 
 
-def calculate_bounding_box_area(label: Label) -> float:
+def calculate_bb_area(label: Label) -> float:
     """
     Calculate the surface area of a bounding box from a Label object.
 
@@ -98,3 +99,33 @@ def calculate_bounding_box_area(label: Label) -> float:
     area = label.width * label.height
 
     return area
+
+
+def plot_bb_distribution(label_paths: List[str], save: bool = False) -> None:
+    """
+    Plots the distribution of bounding box areas from a list of YOLO label file paths.
+
+    Args:
+        label_paths (List[str]): A list of paths to YOLO label files.
+        save (bool): If True, saves the plot to a file named 'bbox_distribution.png' in
+                     the 'pythonpix_results' directory. Defaults to False.
+    """
+    areas = []
+
+    for path in label_paths:
+        labels = read_yolo_labels(path)
+        for label in labels:
+            area = calculate_bb_area(label)
+            areas.append(area)
+
+    plt.figure(figsize=(10, 6))
+    plt.hist(areas, bins=30, color="blue", alpha=0.7)
+    plt.title("Distribution of Bounding Box Areas")
+    plt.xlabel("Area")
+    plt.ylabel("Frequency")
+
+    if save:
+        os.makedirs("pythopix_results", exist_ok=True)
+        plt.savefig("pythopix_results/bbox_distribution.png")
+
+    plt.show()
