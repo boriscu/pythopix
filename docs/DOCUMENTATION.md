@@ -85,7 +85,7 @@
   plot_metrics_by_segment(metrics, save=True)
   ```
 
-### `save_metrics_to_csv`
+### `save_segmented_metrics_to_csv`
 
 - **Description**: Saves the segmented metrics data to a CSV file for easy analysis and record-keeping. The CSV file will have segments as columns and metrics (false positives, false negatives, box loss) as rows.
 - **Parameters**:
@@ -93,9 +93,9 @@
 - **Usage**:
 
   ```python
-  from pythopix.export import save_metrics_to_csv
+  from pythopix.export import save_segmented_metrics_to_csv
 
-  save_metrics_to_csv(metrics)
+  save_segmented_metrics_to_csv(metrics)
   ```
 
 ## Data Handling
