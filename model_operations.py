@@ -159,7 +159,10 @@ def segregate_images(
 
 
 def process_image(
-    image_path: str, model: YOLO = None, model_path: str = None, verbose: bool = False
+    image_path: str,
+    model: YOLO = None,
+    model_path: str = None,
+    verbose: bool = False,
 ) -> Tuple[ImageData, dict]:
     """
     Processes an image using a YOLO model and calculates metrics such as false positives,

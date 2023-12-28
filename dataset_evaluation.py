@@ -1,16 +1,18 @@
+import csv
 import os
 import time
 import torch
-import tqdm
+from tqdm import tqdm
 import matplotlib.pyplot as plt
 from ultralytics import YOLO
-from typing import Optional, List
+from typing import Optional, List, Dict, Tuple
+import numpy as np
 
 from .data_handling import export_to_csv
 from .model_operations import process_image, segregate_images
 from .utils import custom_sort_key
 from .theme import console, INFO_STYLE, SUCCESS_STYLE
-from .labels_operations import Label, read_yolo_labels
+from .labels_operations import Label, extract_label_files, read_yolo_labels
 
 
 def evaluate_dataset(
@@ -59,7 +61,7 @@ def evaluate_dataset(
     image_data_list = []
     predictions_dict = {}
 
-    for image_path in tqdm.tqdm(images, desc="Processing Images"):
+    for image_path in tqdm(images, desc="Processing Images"):
         image_data, predictions = process_image(image_path, model, verbose=verbose)
         image_data_list.append(image_data)
         predictions_dict[image_path] = predictions
@@ -129,3 +131,195 @@ def plot_bb_distribution(label_paths: List[str], save: bool = False) -> None:
         plt.savefig("pythopix_results/bbox_distribution.png")
 
     plt.show()
+
+
+def calculate_segmented_metrics(
+    folder_path: str,
+    model: YOLO = None,
+    model_path: str = None,
+    segment_number: int = 4,
+) -> Dict[str, Tuple[float, float, float]]:
+    """
+    Processes a folder of images, dividing bounding boxes into segments based on their sizes,
+    and calculates average metrics for each segment.
+
+    Args:
+    folder_path (str): Path to the folder containing images and corresponding YOLO label files.
+    model (YOLO, optional): An instance of the YOLO model. If None, model is loaded from model_path.
+    model_path (str, optional): Path to load the YOLO model, used if model is None.
+    segment_number (int, optional): Number of segments to divide the bounding boxes into based on their sizes.
+
+    Returns:
+    Dict[str, Tuple[float, float, float]]: A dictionary where the key is the segment range (e.g., '0-0.25'),
+    and the value is a tuple containing the average false positives, false negatives, and box loss for that segment.
+    """
+
+    if model is None:
+        if model_path is not None:
+            model = YOLO(model_path)
+        else:
+            console.print(
+                "Model path not provided or not found. Using default YOLO model.",
+                style=INFO_STYLE,
+            )
+            model = YOLO("yolov8n")
+
+    # Extract label files
+    label_files = extract_label_files(folder_path, label_type="txt")
+
+    # Calculate Bounding Box Sizes
+    all_bb_areas = []
+    for label_file in label_files:
+        labels = read_yolo_labels(label_file)
+        for label in labels:
+            area = calculate_bb_area(label)
+            all_bb_areas.append(area)
+
+    # Segment Bounding Boxes
+    max_area = max(all_bb_areas)
+    min_area = min(all_bb_areas)
+    segment_size = (max_area - min_area) / segment_number
+    segments = [
+        (
+            round(min_area + i * segment_size, 2),
+            round(min_area + (i + 1) * segment_size, 2),
+        )
+        for i in range(segment_number)
+    ]
+    # Initialize metrics storage
+    metrics_by_segment = {f"{seg[0]:.2f}-{seg[1]:.2f}": [] for seg in segments}
+
+    # Assign Bounding Boxes to Segments and Calculate Metrics
+    for label_file in tqdm(label_files, desc="Calculating metrics"):
+        image_file = label_file.replace(".txt", ".png")
+        labels = read_yolo_labels(label_file)
+
+        for label in labels:
+            area = calculate_bb_area(label)
+            for seg in segments:
+                if seg[0] <= area < seg[1]:
+                    segment_key = f"{seg[0]:.2f}-{seg[1]:.2f}"
+                    image_data, _ = process_image(image_file, model, verbose=False)
+                    metrics_by_segment[segment_key].append(image_data)
+
+    for segment, data in tqdm(
+        metrics_by_segment.items(), desc="Calculating average metrics by segment"
+    ):
+        if data:
+            valid_fp = [
+                d.false_positives
+                for d in data
+                if isinstance(d.false_positives, (int, float))
+            ]
+            valid_fn = [
+                d.false_negatives
+                for d in data
+                if isinstance(d.false_negatives, (int, float))
+            ]
+            valid_bl = [
+                d.box_loss for d in data if isinstance(d.box_loss, (int, float))
+            ]
+
+            avg_false_positives = round(np.mean(valid_fp) if valid_fp else 0, 2)
+            avg_false_negatives = round(np.mean(valid_fn) if valid_fn else 0, 2)
+            avg_box_loss = round(np.mean(valid_bl) if valid_bl else 0, 2)
+
+            metrics_by_segment[segment] = (
+                avg_false_positives,
+                avg_false_negatives,
+                avg_box_loss,
+            )
+        else:
+            metrics_by_segment[segment] = (0, 0, 0)
+
+    return metrics_by_segment
+
+
+def plot_metrics_by_segment(
+    metrics_by_segment: Dict[str, Tuple[float, float, float]], save: bool = False
+) -> None:
+    """
+    Plots and optionally saves three bar charts for the given metrics by segment.
+    There will be one chart for false positives, one for false negatives, and one for box loss.
+
+    Args:
+    metrics_by_segment (Dict[str, Tuple[float, float, float]]): A dictionary with segment ranges as keys and tuples of metrics as values.
+    save (bool, optional): If True, saves the plots to the 'pythopix_results' folder. Defaults to False.
+    """
+    segments = list(metrics_by_segment.keys())
+    false_positives = [metrics[0] for metrics in metrics_by_segment.values()]
+    false_negatives = [metrics[1] for metrics in metrics_by_segment.values()]
+    box_losses = [metrics[2] for metrics in metrics_by_segment.values()]
+
+    # Create the directory for saving results if it doesn't exist
+    if save:
+        os.makedirs("pythopix_results", exist_ok=True)
+
+    # Plotting False Positives
+    plt.figure(figsize=(10, 6))
+    plt.bar(segments, false_positives, color="blue")
+    plt.xlabel("Segments")
+    plt.ylabel("False Positives")
+    plt.title("False Positives by Segment")
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    if save:
+        plt.savefig("pythopix_results/false_positives_by_segment.png")
+    plt.show()
+
+    # Plotting False Negatives
+    plt.figure(figsize=(10, 6))
+    plt.bar(segments, false_negatives, color="green")
+    plt.xlabel("Segments")
+    plt.ylabel("False Negatives")
+    plt.title("False Negatives by Segment")
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    if save:
+        plt.savefig("pythopix_results/false_negatives_by_segment.png")
+    plt.show()
+
+    # Plotting Box Loss
+    plt.figure(figsize=(10, 6))
+    plt.bar(segments, box_losses, color="red")
+    plt.xlabel("Segments")
+    plt.ylabel("Box Loss")
+    plt.title("Box Loss by Segment")
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    if save:
+        plt.savefig("pythopix_results/box_loss_by_segment.png")
+    plt.show()
+
+
+def save_metrics_to_csv(
+    metrics_by_segment: Dict[str, Tuple[float, float, float]]
+) -> None:
+    """
+    Saves the metrics by segment data to a CSV file.
+
+    Args:
+    metrics_by_segment (Dict[str, Tuple[float, float, float]]): Metrics data segmented by bounding box sizes.
+    save (bool, optional): If True, saves the data to a CSV file in the 'pythopix_results' folder. Defaults to False.
+    """
+    os.makedirs("pythopix_results", exist_ok=True)
+    file_path = os.path.join("pythopix_results", "metrics_by_segment.csv")
+
+    with open(file_path, mode="w", newline="", encoding="utf-8") as file:
+        writer = csv.writer(file)
+        writer.writerow(["Segments", *metrics_by_segment.keys()])
+
+        false_positives = ["False Positives"] + [
+            metrics[0] for metrics in metrics_by_segment.values()
+        ]
+        false_negatives = ["False Negatives"] + [
+            metrics[1] for metrics in metrics_by_segment.values()
+        ]
+        box_loss = ["Box Loss"] + [
+            metrics[2] for metrics in metrics_by_segment.values()
+        ]
+
+        # Writing data rows
+        writer.writerow(false_positives)
+        writer.writerow(false_negatives)
+        writer.writerow(box_loss)
