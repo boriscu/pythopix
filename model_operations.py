@@ -159,21 +159,34 @@ def segregate_images(
 
 
 def process_image(
-    image_path: str, model: YOLO, verbose: bool = False
+    image_path: str, model: YOLO = None, model_path: str = None, verbose: bool = False
 ) -> Tuple[ImageData, dict]:
     """
-    Processes a single image using the YOLO model to get predictions and calculates false positives, false negatives, and box loss.
+    Processes an image using a YOLO model and calculates metrics such as false positives,
+    false negatives, and box loss. The function allows the use of a custom model or loads a model from a specified path.
 
     Args:
-    image_path (str): Path of the image to process.
-    model: YOLO model used for predictions.
-    verbose (bool): Flag to enable verbose output during model predictions.
+    image_path (str): The file path of the image to be processed.
+    model (YOLO, optional): An instance of the YOLO model used for object detection. If None, the model is loaded from `model_path`.
+    model_path (str, optional): The file path to load the YOLO model from. Used if `model` is None.
+    verbose (bool, optional): If True, provides detailed output during the prediction process. Default is False.
 
     Returns:
-    ImageData: An object containing data about the image, such as false positives, false negatives, and box loss.
+    Tuple[ImageData, dict]:
+        - ImageData: An object containing detailed information about the image, including metrics like false positives, false negatives, and box loss.
+        - dict: A dictionary containing the predicted bounding boxes and the classes of the detected objects.
     """
 
-    # Get the predicted classes
+    if model is None:
+        if model_path is not None:
+            model = YOLO(model_path)
+        else:
+            console.print(
+                "Model path not provided or not found. Using default YOLO model.",
+                style=INFO_STYLE,
+            )
+            model = YOLO("yolov8n")
+
     result = model(image_path, verbose=verbose)[0]
     predicted_classes = result.boxes.cls.tolist()
     predicted_boxes = result.boxes.xyxyn
