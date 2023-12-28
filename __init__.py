@@ -1,5 +1,8 @@
-from .dataset_evaluation import evaluate_dataset
-
+from .dataset_evaluation import (
+    evaluate_dataset,
+    calculate_bb_area,
+    plot_bb_distribution,
+)
 from .data_handling import export_to_csv
 from .model_operations import process_image, segregate_images
 from .utils import custom_sort_key
@@ -8,6 +11,7 @@ from .labels_operations import (
     save_extracted_labels,
     convert_json_to_txt_labels,
     convert_txt_to_json_labels,
+    read_yolo_labels,
 )
 from .comparison import (
     compare_labels,
@@ -30,4 +34,7 @@ __all__ = [
     "add_bboxes_to_image",
     "compare_labels",
     "compare_folder_labels",
+    "calculate_bb_area",
+    "plot_bb_distribution",
+    "read_yolo_labels",
 ]

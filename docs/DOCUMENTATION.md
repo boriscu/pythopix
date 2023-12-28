@@ -15,9 +15,42 @@
 - **Returns**:
   - `List[dict]`: A list of dictionaries containing sorted image data based on the evaluation.
 - **Usage**:
+
   ```python
   from pythopix.dataset_evaluation import evaluate_dataset
   evaluate_dataset("path/to/test_images", model_path="path/to/model", num_images=50, verbose=True)
+  ```
+
+### `calculate_bb_area`
+
+- **Description**: Calculates the surface area of a bounding box from a Label object.
+- **Parameters**:
+  - `label (Label)`: A Label object representing the bounding box and class ID.
+- **Returns**:
+  - `float`: The surface area of the bounding box.
+- **Usage**:
+
+  ```python
+  from pythopix.utils import calculate_bb_area
+
+  area = calculate_bb_area(label)
+  ```
+
+### `plot_bb_distribution`
+
+- **Description**: Plots the distribution of bounding box areas from a list of YOLO label file paths and optionally saves the plot.
+- **Parameters**:
+  - `label_paths (List[str])`: A list of paths to YOLO label files.
+  - `save (bool)`: If True, saves the plot to 'pythopix_results/bbox_distribution.png'. Defaults to False.
+- **Returns**:
+  - None
+- **Usage**:
+
+  ```python
+  from pythopix.dataset_evaluation import plot_bb_distribution
+
+  label_files = extract_label_files('/path/to/label_folder')
+  plot_label_distribution(label_files, save=True)
   ```
 
 ## Data Handling
@@ -120,6 +153,21 @@ The `labels_operations` module in PythoPix provides tools for extracting, conver
   from pythopix.labels_operations import convert_json_to_txt_labels
 
   convert_json_to_txt_labels(json_label_files)
+  ```
+
+### `read_yolo_labels`
+
+- **Description**: Reads YOLO label files and returns a list of labels.
+- **Parameters**:
+  - `file_path (str)`: Path to the YOLO label file.
+- **Returns**:
+  - `List[Label]`: A list of Label objects parsed from the file.
+- **Usage**:
+
+  ```python
+  from pythopix.utils import read_yolo_labels
+
+  labels = read_yolo_labels('/path/to/label_file.txt')
   ```
 
 ## Model Operations
