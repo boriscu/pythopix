@@ -205,20 +205,35 @@ The `model_operations` module in PythoPix includes functions for processing imag
 
 ### `process_image`
 
-- **Description**: Processes an image using the YOLO model for predictions and calculates related metrics.
+- **Description**: Processes an image using a YOLO model and calculates accuracy metrics such as false positives, false negatives, and box loss. The function can use a provided model instance or load a model from a specified path.
+
 - **Parameters**:
-  - `image_path (str)`: Path of the image to process.
-  - `model (YOLO)`: YOLO model for image processing.
-  - `verbose (bool)`: Flag for verbose output. Defaults to False.
+
+  - `image_path (str)`: The file path of the image to be processed.
+  - `model (YOLO, optional)`: An instance of the YOLO model used for object detection. If `None`, the model is loaded from `model_path`.
+  - `model_path (str, optional)`: The file path to load the YOLO model from. This is used if `model` is `None`.
+  - `verbose (bool, optional)`: If set to `True`, provides detailed output during the prediction process. Defaults to `False`.
+
 - **Returns**:
-  - `ImageData`: Data about the image, including false positives, false negatives, and box loss.
+
+  - `Tuple[ImageData, dict]`: A tuple containing:
+    - `ImageData`: An object with detailed information about the image, including metrics like false positives, false negatives, and box loss.
+    - `dict`: A dictionary containing the predicted bounding boxes and the classes of the detected objects.
+
 - **Usage**:
 
   ```python
-  from pythopix.model_operations import process_image
+  from your_module import process_image, YOLO
 
-  image_data, predictions = process_image("path/to/image.jpg", model)
+  # If using a pre-loaded model
+  model = YOLO("path/to/model")
+  image_data, predictions = process_image("path/to/image.jpg", model=model)
+
+  # Or, if loading the model from a path
+  image_data, predictions = process_image("path/to/image.jpg", model_path="path/to/model")
   ```
+
+This updated documentation includes the optional parameters and provides examples for different usage scenarios.
 
 ## Comparison
 
