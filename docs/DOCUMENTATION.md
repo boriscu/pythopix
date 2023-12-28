@@ -53,6 +53,51 @@
   plot_label_distribution(label_files, save=True)
   ```
 
+### `calculate_segmented_metrics`
+
+- **Description**: Processes a folder of images and calculates average detection metrics for segmented bounding boxes based on their sizes. The function divides bounding boxes into specified segments and computes average false positives, false negatives, and box loss for each segment.
+- **Parameters**:
+  - `folder_path (str)`: Path to the folder containing images and corresponding YOLO label files.
+  - `model (YOLO, optional)`: An instance of the YOLO model. If None, the model is loaded from the specified `model_path`.
+  - `model_path (str, optional)`: Path to load the YOLO model from, used if `model` is None.
+  - `segment_number (int, optional)`: Number of segments to divide the bounding boxes into based on their sizes. Defaults to 4.
+- **Returns**:
+  - `Dict[str, Tuple[float, float, float]]`: A dictionary where each key is a segment range (e.g., '0.00-0.25'), and the value is a tuple containing the average false positives, false negatives, and box loss for that segment.
+- **Usage**:
+
+  ```python
+  from pythopix.metrics import calculate_segmented_metrics
+
+  metrics = calculate_segmented_metrics('/path/to/folder', model=my_model, segment_number=4)
+  ```
+
+### `plot_metrics_by_segment`
+
+- **Description**: Plots and optionally saves three bar charts for given segmented metrics. There is one chart each for false positives, false negatives, and box loss, illustrating the performance across different bounding box size segments.
+- **Parameters**:
+  - `metrics_by_segment (Dict[str, Tuple[float, float, float]])`: A dictionary with segment ranges as keys and tuples of metrics as values.
+  - `save (bool, optional)`: If True, saves the plots to the 'pythopix_results' folder. Defaults to False.
+- **Usage**:
+
+  ```python
+  from pythopix.visualization import plot_metrics_by_segment
+
+  plot_metrics_by_segment(metrics, save=True)
+  ```
+
+### `save_metrics_to_csv`
+
+- **Description**: Saves the segmented metrics data to a CSV file for easy analysis and record-keeping. The CSV file will have segments as columns and metrics (false positives, false negatives, box loss) as rows.
+- **Parameters**:
+  - `metrics_by_segment (Dict[str, Tuple[float, float, float]])`: Metrics data segmented by bounding box sizes.
+- **Usage**:
+
+  ```python
+  from pythopix.export import save_metrics_to_csv
+
+  save_metrics_to_csv(metrics)
+  ```
+
 ## Data Handling
 
 This module focuses on handling and exporting image data, particularly useful in post-analysis data management.
