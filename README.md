@@ -1,18 +1,21 @@
-![pythopix Logo](https://raw.githubusercontent.com/boriscu/pythopix/main/docs/pythopix.png)
-
 # pythopix
 
-PythoPix is a Python library designed for evaluating image datasets using YOLO models. It simplifies image data analysis and object detection, making it accessible even for users without a pre-trained YOLO model. The core feature of PythoPix is its ability to re-evaluate the training dataset with the trained model, highlighting false positives and negatives. This functionality is crucial for identifying potential errors or biases in the original dataset, allowing users to understand where additional data augmentation or correction might be necessary.
+![pythopix Logo](https://raw.githubusercontent.com/boriscu/pythopix/main/docs/pythopix.png)
+
+PythoPix is a Python library designed for evaluating and analyzing image datasets using YOLO models. It extends beyond simple data analysis to encompass object detection, comparison of detection results, label handling, and model operations, making it a comprehensive tool for both experienced users and beginners in YOLO model applications.
 
 ## Features
 
-- Easy evaluation of image datasets for object detection.
-- Automatic fallback to a default YOLO model if a custom model is not provided.
-- Options for detailed analysis, including metrics export and image segregation.
+- **Dataset Evaluation**: Robust evaluation of image datasets using YOLO models, with options for detailed analysis.
+- **Model Operations**: Processing images with YOLO models, calculating metrics like IoU, and managing image segregation for augmentation.
+- **Label Operations**: Extensive tools for handling, converting, and saving label files in different formats, facilitating versatile dataset management.
+- **File Operations**: Efficient handling and saving of predictions and analysis results, crucial for post-analysis data management.
+- **Comparison Tools**: Functions for comparing original and predicted labels, aiding in the visual assessment of model accuracy.
+- **Data Handling and Export**: Facilitating the export of image analysis results to CSV, enabling easy data sharing and record-keeping.
 
 ## Installation
 
-You can install pythopix directly using pip:
+Install pythopix using pip:
 
 ```bash
 pip install pythopix
@@ -21,8 +24,6 @@ pip install pythopix
 ## Usage
 
 ### Evaluating an Image Dataset
-
-To evaluate an image dataset, you need to provide the path to your dataset. Optionally, you can also specify a custom model path, number of images for additional augmentation, and other parameters.
 
 ```python
 from pythopix import evaluate_dataset
@@ -37,11 +38,31 @@ evaluate_dataset(
 )
 ```
 
-If you don't specify a `model_path`, pythopix will automatically use a default YOLO model.
+### Comparing Labels
 
-### Additional Functionalities
+```python
+from pythopix.comparison import compare_labels
 
-pythopix also provides additional utility functions for custom data handling and processing. Refer to our [documentation](https://github.com/boriscu/pythopix/blob/main/docs/DOCUMENTATION.md) for detailed information on these utilities.
+compare_labels(
+    image_path='path/to/image.png',
+    predicted_label_path='path/to/predicted/label.txt',
+    original_label_path='path/to/original/label.txt',  # Optional
+    show=True,  # Optional
+    save_fig=False  # Optional
+)
+```
+
+### Handling Data and Labels
+
+```python
+from pythopix.labels_operations import extract_label_files, convert_txt_to_json_labels
+
+# Extract label files
+label_files = extract_label_files('/path/to/label_folder')
+
+# Convert TXT to JSON labels
+convert_txt_to_json_labels(label_files, label_mapping={0: "Label1", 1: "Label2"})
+```
 
 ## Requirements
 
@@ -49,6 +70,8 @@ pythopix also provides additional utility functions for custom data handling and
 - PyTorch
 - tqdm
 - Ultralytics YOLO
+- OpenCV
+- matplotlib
 
 ## Contributing
 
