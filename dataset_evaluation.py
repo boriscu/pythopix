@@ -95,7 +95,7 @@ def calculate_bb_area(label: Label) -> float:
     label (Label): A Label object representing the bounding box and class ID.
 
     Returns:
-    float: The surface area of the bounding box.
+    float: The fractional surface area of the bounding box, as a proportion of the total image area.
     """
 
     area = label.width * label.height
@@ -117,13 +117,13 @@ def plot_bb_distribution(label_paths: List[str], save: bool = False) -> None:
     for path in label_paths:
         labels = read_yolo_labels(path)
         for label in labels:
-            area = calculate_bb_area(label)
+            area = calculate_bb_area(label) * 100
             areas.append(area)
 
     plt.figure(figsize=(10, 6))
     plt.hist(areas, bins=30, color="blue", alpha=0.7)
     plt.title("Distribution of Bounding Box Areas")
-    plt.xlabel("Area")
+    plt.xlabel("Area (% of original image)")
     plt.ylabel("Frequency")
 
     if save:
@@ -246,7 +246,10 @@ def plot_metrics_by_segment(
     metrics_by_segment (Dict[str, Tuple[float, float, float]]): A dictionary with segment ranges as keys and tuples of metrics as values.
     save (bool, optional): If True, saves the plots to the 'pythopix_results' folder. Defaults to False.
     """
-    segments = list(metrics_by_segment.keys())
+    segments = [
+        f"{float(seg.split('-')[0])*100:.2f}-{float(seg.split('-')[1])*100:.2f}%"
+        for seg in metrics_by_segment.keys()
+    ]
     false_positives = [metrics[0] for metrics in metrics_by_segment.values()]
     false_negatives = [metrics[1] for metrics in metrics_by_segment.values()]
     box_losses = [metrics[2] for metrics in metrics_by_segment.values()]
@@ -258,7 +261,7 @@ def plot_metrics_by_segment(
     # Plotting False Positives
     plt.figure(figsize=(10, 6))
     plt.bar(segments, false_positives, color="#56baf0")
-    plt.xlabel("Segments")
+    plt.xlabel("Segments (% of original image)")
     plt.ylabel("False Positives")
     plt.title("False Positives by Segment")
     plt.xticks(rotation=45)
@@ -270,7 +273,7 @@ def plot_metrics_by_segment(
     # Plotting False Negatives
     plt.figure(figsize=(10, 6))
     plt.bar(segments, false_negatives, color="#a3e38c")
-    plt.xlabel("Segments")
+    plt.xlabel("Segments (% of original image)")
     plt.ylabel("False Negatives")
     plt.title("False Negatives by Segment")
     plt.xticks(rotation=45)
@@ -282,7 +285,7 @@ def plot_metrics_by_segment(
     # Plotting Box Loss
     plt.figure(figsize=(10, 6))
     plt.bar(segments, box_losses, color="#050c26")
-    plt.xlabel("Segments")
+    plt.xlabel("Segments (% of original image)")
     plt.ylabel("Box Loss")
     plt.title("Box Loss by Segment")
     plt.xticks(rotation=45)

@@ -27,7 +27,9 @@
 - **Parameters**:
   - `label (Label)`: A Label object representing the bounding box and class ID.
 - **Returns**:
-  - `float`: The surface area of the bounding box.
+
+  - `float`: The fractional surface area of the bounding box, as a proportion of the total image area.
+
 - **Usage**:
 
   ```python
