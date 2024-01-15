@@ -1,3 +1,4 @@
+from typing import Tuple
 import cv2
 import numpy as np
 import os
@@ -46,8 +47,54 @@ def gaussian_noise(
     return noisy_image
 
 
+def random_erasing(
+    image_path: str,
+    erasing_prob: float = 0.5,
+    area_ratio_range: Tuple[float, float] = (0.02, 0.1),
+    aspect_ratio_range: Tuple[float, float] = (0.3, 3),
+) -> np.ndarray:
+    """
+    Applies the Random Erasing augmentation to an image.
+
+    Parameters:
+    image_path (str): Path to the input image.
+    erasing_prob (float): Probability of erasing a random patch. Defaults to 0.5.
+    area_ratio_range (Tuple[float, float]): Range of the ratio of the erased area to the whole image area. Defaults to (0.02, 0.4).
+    aspect_ratio_range (Tuple[float, float]): Range of the aspect ratio of the erased area. Defaults to (0.3, 3).
+
+    Returns:
+    np.ndarray: Image with a random patch erased.
+    """
+    image = cv2.imread(image_path, cv2.IMREAD_COLOR)
+    if image is None:
+        raise FileNotFoundError(f"Image at {image_path} not found.")
+
+    if np.random.rand() > erasing_prob:
+        return image  # Skip erasing with a certain probability
+
+    h, w, _ = image.shape
+    area = h * w
+
+    for _ in range(100):  # Try 100 times
+        erase_area = np.random.uniform(area_ratio_range[0], area_ratio_range[1]) * area
+        aspect_ratio = np.random.uniform(aspect_ratio_range[0], aspect_ratio_range[1])
+
+        erase_h = int(np.sqrt(erase_area * aspect_ratio))
+        erase_w = int(np.sqrt(erase_area / aspect_ratio))
+
+        if erase_h < h and erase_w < w:
+            x = np.random.randint(0, w - erase_w)
+            y = np.random.randint(0, h - erase_h)
+            image[y : y + erase_h, x : x + erase_w] = np.random.randint(
+                0, 256, (erase_h, erase_w, 3), dtype=np.uint8
+            )
+            return image
+
+    return image
+
+
 # Available augmentation functions
-augmentation_funcs = {"gaussian": gaussian_noise}
+augmentation_funcs = {"gaussian": gaussian_noise, "random_erase": random_erasing}
 
 
 def apply_augmentations(
@@ -61,6 +108,7 @@ def apply_augmentations(
     input_folder (str): Path to the folder containing the images to augment.
     augmentation_type (str): The type of augmentation to apply. Currently supports:
                              - "gaussian": Applies Gaussian noise to the images.
+                             - "random_erase": Erases random patches from the image.
     output_folder (str, optional): Path to the folder where augmented images and label files will be saved. If not
                                    specified, defaults to 'pythopix_results/augmentation' or a variation if it already exists.
 

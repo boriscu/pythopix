@@ -361,6 +361,22 @@ The `comparison` module in PythoPix includes functions for comparing original an
 
 ## Image Augmentation
 
+### `apply_augmentations`
+
+- **Description**: Applies a specified type of augmentation to all images in a given folder and saves the results along with their corresponding label files to an output folder. This function is designed to automate the process of augmenting multiple images in a dataset.
+- **Parameters**:
+  - `input_folder (str)`: Path to the folder containing the images to augment.
+  - `augmentation_type (str)`: The type of augmentation to apply. Currently supports "gaussian" for Gaussian noise, "random_erase" for random erasing
+  - `output_folder (Optional[str])`: Path to the folder where augmented images and label files will be saved. If not specified, defaults to `pythopix_results/augmentation` or a variation if it already exists.
+- **Returns**:
+  - `None`: The function saves the augmented images and label files to the specified folder and does not return any value.
+- **Usage**:
+
+  ```python
+  from pythopix.image_augmentation import apply_augmentations
+  apply_augmentations("path/to/input_folder", "gaussian", "path/to/output_folder")
+  ```
+
 ### `add_gaussian_noise`
 
 - **Description**: Adds Gaussian noise to an image. This function is useful for augmenting images to improve the robustness of machine learning models.
@@ -377,18 +393,19 @@ The `comparison` module in PythoPix includes functions for comparing original an
   noisy_image = add_gaussian_noise("path/to/image.jpg", sigma=30, frequency=0.7)
   ```
 
-### `apply_augmentations`
+### `random_erasing`
 
-- **Description**: Applies a specified type of augmentation to all images in a given folder and saves the results along with their corresponding label files to an output folder. This function is designed to automate the process of augmenting multiple images in a dataset.
+- **Description**: Applies Random Erasing augmentation to an image. This function is effective for simulating occlusions and enhancing the robustness of machine learning models, especially in environments where objects might be partially obscured.
 - **Parameters**:
-  - `input_folder (str)`: Path to the folder containing the images to augment.
-  - `augmentation_type (str)`: The type of augmentation to apply. Currently supports "gaussian" for Gaussian noise.
-  - `output_folder (Optional[str])`: Path to the folder where augmented images and label files will be saved. If not specified, defaults to `pythopix_results/augmentation` or a variation if it already exists.
+  - `image_path (str)`: Path to the input image.
+  - `erasing_prob (float)`: Probability of erasing a random patch in the image. Defaults to `0.5`.
+  - `area_ratio_range (Tuple[float, float])`: Range of the ratio of the erased area to the total image area. Specifies how large the erased patch can be relative to the image. Defaults to `(0.02, 0.2)`.
+  - `aspect_ratio_range (Tuple[float, float])`: Range of the aspect ratio of the erased area. Controls the shape of the erased patch, from narrow to wide. Defaults to `(0.3, 3)`.
 - **Returns**:
-  - `None`: The function saves the augmented images and label files to the specified folder and does not return any value.
+  - `np.ndarray`: The image with a random patch erased.
 - **Usage**:
 
   ```python
-  from pythopix.image_augmentation import apply_augmentations
-  apply_augmentations("path/to/input_folder", "gaussian", "path/to/output_folder")
+  from pythopix.image_augmentation import random_erasing
+  erased_image = random_erasing("path/to/image.jpg", erasing_prob=0.5, area_ratio_range=(0.02, 0.4), aspect_ratio_range=(0.3, 3))
   ```

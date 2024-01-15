@@ -23,7 +23,7 @@ from .comparison import (
     add_bboxes_to_image,
 )
 
-from .augmentations import gaussian_noise, apply_augmentations
+from .augmentations import gaussian_noise, random_erasing, apply_augmentations
 
 __all__ = [
     "evaluate_dataset",
@@ -47,4 +47,5 @@ __all__ = [
     "calculate_segmented_metrics",
     "gaussian_noise",
     "apply_augmentations",
+    "random_erasing",
 ]
