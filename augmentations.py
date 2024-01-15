@@ -98,19 +98,17 @@ augmentation_funcs = {"gaussian": gaussian_noise, "random_erase": random_erasing
 
 
 def apply_augmentations(
-    input_folder: str, augmentation_type: str, output_folder: str = None
+    input_folder: str, augmentation_type: str, output_folder: str = None, **kwargs
 ):
     """
-    Applies a specified type of augmentation to all images in a specified folder and saves the results along with their
-    corresponding label files to an output folder.
+    Applies a specified type of augmentation to all images in a given folder and saves the results along with their
+    corresponding label files to an output folder. The augmentation function is called with additional keyword arguments.
 
     Parameters:
     input_folder (str): Path to the folder containing the images to augment.
-    augmentation_type (str): The type of augmentation to apply. Currently supports:
-                             - "gaussian": Applies Gaussian noise to the images.
-                             - "random_erase": Erases random patches from the image.
-    output_folder (str, optional): Path to the folder where augmented images and label files will be saved. If not
-                                   specified, defaults to 'pythopix_results/augmentation' or a variation if it already exists.
+    augmentation_type (str): The type of augmentation to apply.
+    output_folder (Optional[str]): Path to the folder where augmented images and label files will be saved.
+    **kwargs: Arbitrary keyword arguments passed to the augmentation function.
 
     Returns:
     None
@@ -120,7 +118,7 @@ def apply_augmentations(
             f"Error Augmentation type `{augmentation_type}` is not supported",
             style=ERROR_STYLE,
         )
-        raise ValueError(f"Augmentation type '{augmentation_type}' is not supported.")
+        raise ValueError(f"Augmentation type {augmentation_type} is not supported.")
 
     augmentation_func = augmentation_funcs[augmentation_type]
 
@@ -136,7 +134,7 @@ def apply_augmentations(
     for image_path in tqdm.tqdm(
         glob.glob(os.path.join(input_folder, "*.[jp][pn]g")), desc="Augmenting images"
     ):
-        augmented_image = augmentation_func(image_path)
+        augmented_image = augmentation_func(image_path, **kwargs)
 
         base_name = os.path.basename(image_path)
         output_image_path = os.path.join(output_folder, base_name)

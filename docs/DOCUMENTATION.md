@@ -363,18 +363,31 @@ The `comparison` module in PythoPix includes functions for comparing original an
 
 ### `apply_augmentations`
 
-- **Description**: Applies a specified type of augmentation to all images in a given folder and saves the results along with their corresponding label files to an output folder. This function is designed to automate the process of augmenting multiple images in a dataset.
+- **Description**: Applies a specified type of augmentation to all images in a given folder and saves the results along with their corresponding label files to an output folder. The function supports various augmentation types and allows for flexible parameter specification for each augmentation method.
 - **Parameters**:
   - `input_folder (str)`: Path to the folder containing the images to augment.
-  - `augmentation_type (str)`: The type of augmentation to apply. Currently supports "gaussian" for Gaussian noise, "random_erase" for random erasing
+  - `augmentation_type (str)`: The type of augmentation to apply. Currently supports "gaussian" for Gaussian noise and "random_erasing" for random erasing.
   - `output_folder (Optional[str])`: Path to the folder where augmented images and label files will be saved. If not specified, defaults to `pythopix_results/augmentation` or a variation if it already exists.
+  - Additional keyword arguments (`**kwargs`) for the specific augmentation function.
 - **Returns**:
   - `None`: The function saves the augmented images and label files to the specified folder and does not return any value.
 - **Usage**:
 
   ```python
   from pythopix.image_augmentation import apply_augmentations
-  apply_augmentations("path/to/input_folder", "gaussian", "path/to/output_folder")
+
+  # For Gaussian noise
+  apply_augmentations("path/to/input_folder", "gaussian", "path/to/output_folder", sigma=25, frequency=1.0)
+
+  # For Random Erasing
+  apply_augmentations(
+      "path/to/input_folder",
+      "random_erasing",
+      "path/to/output_folder",
+      erasing_prob=0.5,
+      area_ratio_range=(0.02, 0.4),
+      aspect_ratio_range=(0.3, 3)
+  )
   ```
 
 ### `add_gaussian_noise`
