@@ -358,3 +358,37 @@ The `comparison` module in PythoPix includes functions for comparing original an
 
   image_with_boxes = add_bboxes_to_image(image, '/path/to/label_file.txt', img_width, img_height)
   ```
+
+## Image Augmentation
+
+### `add_gaussian_noise`
+
+- **Description**: Adds Gaussian noise to an image. This function is useful for augmenting images to improve the robustness of machine learning models.
+- **Parameters**:
+  - `image_path (str)`: The file path to the input image.
+  - `sigma (float)`: The standard deviation of the Gaussian noise. Higher values result in more intense noise. Defaults to `25`.
+  - `frequency (float)`: The frequency of applying the noise. A value of `1.0` applies noise to every pixel, while lower values apply it more sparsely. Defaults to `1.0`.
+- **Returns**:
+  - `np.ndarray`: The image with Gaussian noise added.
+- **Usage**:
+
+  ```python
+  from pythopix.image_augmentation import add_gaussian_noise
+  noisy_image = add_gaussian_noise("path/to/image.jpg", sigma=30, frequency=0.7)
+  ```
+
+### `apply_augmentations`
+
+- **Description**: Applies a specified type of augmentation to all images in a given folder and saves the results along with their corresponding label files to an output folder. This function is designed to automate the process of augmenting multiple images in a dataset.
+- **Parameters**:
+  - `input_folder (str)`: Path to the folder containing the images to augment.
+  - `augmentation_type (str)`: The type of augmentation to apply. Currently supports "gaussian" for Gaussian noise.
+  - `output_folder (Optional[str])`: Path to the folder where augmented images and label files will be saved. If not specified, defaults to `pythopix_results/augmentation` or a variation if it already exists.
+- **Returns**:
+  - `None`: The function saves the augmented images and label files to the specified folder and does not return any value.
+- **Usage**:
+
+  ```python
+  from pythopix.image_augmentation import apply_augmentations
+  apply_augmentations("path/to/input_folder", "gaussian", "path/to/output_folder")
+  ```

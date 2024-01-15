@@ -23,6 +23,8 @@ from .comparison import (
     add_bboxes_to_image,
 )
 
+from .augmentations import gaussian_noise, apply_augmentations
+
 __all__ = [
     "evaluate_dataset",
     "export_to_csv",
@@ -43,4 +45,6 @@ __all__ = [
     "save_segmented_metrics_to_csv",
     "plot_metrics_by_segment",
     "calculate_segmented_metrics",
+    "gaussian_noise",
+    "apply_augmentations",
 ]
