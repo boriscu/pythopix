@@ -1,28 +1,35 @@
 from typing import Tuple
+import random
 import cv2
 import numpy as np
 import os
 import glob
 import shutil
 import tqdm
-
+import time
 from .theme import console, SUCCESS_STYLE, ERROR_STYLE
 
 
 def gaussian_noise(
-    image_path: str, sigma: float = 25, frequency: float = 1.0
+    image_path: str,
+    sigma_range: tuple = (30, 70),
+    frequency: float = 1.0,
+    noise_probability: float = 0.5,
 ) -> np.ndarray:
     """
-    Adds Gaussian noise to an image.
+    Adds Gaussian noise to an image with a certain probability and varying intensity.
 
     Parameters:
     image_path (str): The file path to the input image.
-    sigma (float): The standard deviation of the Gaussian noise. Higher values mean more intense noise.
+    sigma_range (tuple): The range of standard deviation for the Gaussian noise.
+                         Noise intensity will be randomly selected within this range.
     frequency (float): The frequency of applying the noise. A value of 1.0 applies noise to every pixel,
                        while lower values apply it more sparsely.
+    noise_probability (float): Probability of applying noise to the image.
+                                Ranges from 0 (no noise) to 1 (always add noise).
 
     Returns:
-    np.ndarray: The image with Gaussian noise added.
+    np.ndarray: The image with or without Gaussian noise added.
 
     Raises:
     FileNotFoundError: If the image at the specified path is not found.
@@ -32,19 +39,25 @@ def gaussian_noise(
     if image is None:
         raise FileNotFoundError(f"Image at {image_path} not found.")
 
-    # Generate Gaussian noise
-    h, w, c = image.shape
-    mean = 0
-    gauss = np.random.normal(mean, sigma, (h, w, c)) * frequency
-    gauss = gauss.reshape(h, w, c)
+    if random.random() < noise_probability:
+        h, w, c = image.shape
+        mean = 0
 
-    # Add the Gaussian noise to the image
-    noisy_image = image + gauss
+        sigma = random.uniform(*sigma_range)
 
-    noisy_image = np.clip(noisy_image, 0, 255)
-    noisy_image = noisy_image.astype(np.uint8)
+        # Generate Gaussian noise
+        gauss = np.random.normal(mean, sigma, (h, w, c)) * frequency
+        gauss = gauss.reshape(h, w, c)
 
-    return noisy_image
+        # Add the Gaussian noise to the image
+        noisy_image = image + gauss
+
+        noisy_image = np.clip(noisy_image, 0, 255)
+        noisy_image = noisy_image.astype(np.uint8)
+
+        return noisy_image
+    else:
+        return image
 
 
 def random_erasing(
@@ -106,7 +119,7 @@ def apply_augmentations(
 
     Parameters:
     input_folder (str): Path to the folder containing the images to augment.
-    augmentation_type (str): The type of augmentation to apply.
+    augmentation_type (str): The type of augmentation to apply. Currently supported: gaussian, random_erase
     output_folder (Optional[str]): Path to the folder where augmented images and label files will be saved.
     **kwargs: Arbitrary keyword arguments passed to the augmentation function.
 
@@ -119,6 +132,8 @@ def apply_augmentations(
             style=ERROR_STYLE,
         )
         raise ValueError(f"Augmentation type {augmentation_type} is not supported.")
+
+    start_time = time.time()
 
     augmentation_func = augmentation_funcs[augmentation_type]
 
@@ -146,8 +161,9 @@ def apply_augmentations(
                 output_folder, os.path.basename(label_path)
             )
             shutil.copy(label_path, output_label_path)
+    end_time = time.time()
 
     console.print(
-        "Successfully augmented images",
+        f"Successfully augmented images in {round(end_time-start_time,2)} seconds",
         style=SUCCESS_STYLE,
     )

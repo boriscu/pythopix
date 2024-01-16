@@ -390,21 +390,32 @@ The `comparison` module in PythoPix includes functions for comparing original an
   )
   ```
 
-### `add_gaussian_noise`
+### `gaussian_noise`
 
-- **Description**: Adds Gaussian noise to an image. This function is useful for augmenting images to improve the robustness of machine learning models.
+- **Description**:
+
+  - Adds Gaussian noise to an image with variable intensity and on a probabilistic basis. This function is particularly useful for augmenting images to improve the robustness and generalization of machine learning models, especially for tasks involving image classification and localization.
+
 - **Parameters**:
+
   - `image_path (str)`: The file path to the input image.
-  - `sigma (float)`: The standard deviation of the Gaussian noise. Higher values result in more intense noise. Defaults to `25`.
-  - `frequency (float)`: The frequency of applying the noise. A value of `1.0` applies noise to every pixel, while lower values apply it more sparsely. Defaults to `1.0`.
+  - `sigma_range (tuple, optional)`: A tuple specifying the range of standard deviation for the Gaussian noise. The function randomly selects a `sigma` value within this range for each image, allowing for variability in noise intensity. Higher values in the range result in more intense noise. Defaults to `(10, 25)`.
+  - `frequency (float, optional)`: The frequency of applying the noise. A value of `1.0` applies noise to every pixel, while lower values apply it more sparsely. Defaults to `1.0`.
+  - `noise_probability (float, optional)`: The probability of applying noise to an image. Ranges from `0` (no noise) to `1` (always add noise). Defaults to `0.5`. This allows the model to train on both noisy and clean images.
+
 - **Returns**:
-  - `np.ndarray`: The image with Gaussian noise added.
+
+  - `np.ndarray`: The processed image, which may or may not have Gaussian noise added, based on the `noise_probability`.
+
 - **Usage**:
 
-  ```python
-  from pythopix.image_augmentation import add_gaussian_noise
-  noisy_image = gaussian_noise("path/to/image.jpg", sigma=30, frequency=0.7)
-  ```
+  - Here's an example of how to use the `gaussian_noise` function:
+
+    ```python
+    from image_augmentation import gaussian_noise
+    # Applying Gaussian noise with a variable sigma and a 50% chance of noise application
+    noisy_image = gaussian_noise("path/to/image.jpg", sigma_range=(15, 30), frequency=0.7, noise_probability=0.5)
+    ```
 
 ### `random_erasing`
 
