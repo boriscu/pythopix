@@ -98,9 +98,7 @@ def random_erasing(
         if erase_h < h and erase_w < w:
             x = np.random.randint(0, w - erase_w)
             y = np.random.randint(0, h - erase_h)
-            image[y : y + erase_h, x : x + erase_w] = np.random.randint(
-                0, 256, (erase_h, erase_w, 3), dtype=np.uint8
-            )
+            image[y : y + erase_h, x : x + erase_w] = 0
             return image
 
     return image
