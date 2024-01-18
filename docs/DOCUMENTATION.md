@@ -433,3 +433,77 @@ The `comparison` module in PythoPix includes functions for comparing original an
   from pythopix.image_augmentation import random_erasing
   erased_image = random_erasing("path/to/image.jpg", erasing_prob=0.5, area_ratio_range=(0.02, 0.4), aspect_ratio_range=(0.3, 3))
   ```
+
+### `cut_images`
+
+- **Description**:
+
+  - Processes images from a given folder, extracting bounding box regions as defined in corresponding YOLO format annotation files. Each cropped image is saved with a filename indicating its class and a serial number.
+
+- **Parameters**:
+
+  - `input_folder (str)`: Path to the folder with images and YOLO annotation files.
+  - `output_folder (str, optional)`: Path for saving the cropped images. Defaults to `"pythopix_results/cuts"`.
+  - `num_images (int, optional)`: Number of images to process. Defaults to `20`.
+
+- **Returns**:
+
+  - None: Cropped images are saved in the specified output folder.
+
+- **Usage**:
+
+  - Example of using `cut_images`:
+
+    ```python
+    cut_images('path/to/input_images', 'path/to/output_cuts', 15)
+    ```
+
+### `make_backgrounds`
+
+- **Description**:
+
+  - Copies images without corresponding YOLO label files from an input folder to an output folder. These images are considered as 'backgrounds'. The function can limit the number of backgrounds copied.
+
+- **Parameters**:
+
+  - `input_folder (str)`: Path to the folder with images and potentially their YOLO annotation files.
+  - `output_folder (str, optional)`: Path for saving the background images. Defaults to `"pythopix_results/backgrounds"`.
+  - `max_backgrounds (int, optional)`: Maximum number of background images to copy. If unspecified, all backgrounds found will be copied.
+
+- **Returns**:
+
+  - None: Background images are saved in the specified output folder.
+
+- **Usage**:
+
+  - Example of using `make_backgrounds`:
+
+    ```python
+    make_backgrounds('path/to/input_images', 'path/to/output_backgrounds', 30)
+    ```
+
+### `make_mosaic_images`
+
+- **Description**:
+
+  - Creates mosaic images by overlaying cutout images onto background images. This function chooses a random background image and a specified number of cutout images, placing them randomly within the lower half of the background. It also generates corresponding YOLO format label files for each mosaic, detailing the class and bounding box coordinates of each inserted cutout.
+
+- **Parameters**:
+
+  - `cutouts_folder (str)`: Path to the folder containing cutout images.
+  - `backgrounds_folder (str)`: Path to the folder containing background images.
+  - `output_folder (str, optional)`: Path for saving the mosaic images and their label files. Defaults to `"pythopix_results/mosaic_images"`.
+  - `num_images (int, optional)`: Number of mosaic images to create. Defaults to `20`.
+  - `cutouts_range (Tuple[int, int], optional)`: Range of the number of cutouts to be placed on each background, inclusive. Defaults to `(1, 3)`.
+
+- **Returns**:
+
+  - None: The function saves the mosaic images and label files to the specified output folder.
+
+- **Usage**:
+
+  - Example of using `make_mosaic_images` to create mosaic images:
+
+    ```python
+    make_mosaic_images('path/to/cutouts', 'path/to/backgrounds', 'path/to/output', 10, (1, 5))
+    ```

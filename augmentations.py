@@ -190,6 +190,8 @@ def cut_images(
     Returns:
     None
     """
+    start_time = time.time()
+
     output_folder = get_unique_folder_name(output_folder)
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
@@ -230,6 +232,13 @@ def cut_images(
 
             images_processed += 1
 
+    end_time = time.time()
+
+    console.print(
+        f"Successfully cutout images in {round(end_time-start_time,2)} seconds",
+        style=SUCCESS_STYLE,
+    )
+
 
 def make_backgrounds(
     input_folder: str,
@@ -254,6 +263,8 @@ def make_backgrounds(
     Returns:
     None
     """
+    start_time = time.time()
+
     output_folder = get_unique_folder_name(output_folder)
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
@@ -271,6 +282,13 @@ def make_backgrounds(
             if not os.path.exists(label_path):
                 shutil.copy(image_path, output_folder)
                 backgrounds_copied += 1
+
+    end_time = time.time()
+
+    console.print(
+        f"Successfully made backgrounds in {round(end_time-start_time,2)} seconds",
+        style=SUCCESS_STYLE,
+    )
 
 
 def extract_class_from_filename(filename: str) -> int:
@@ -311,6 +329,7 @@ def make_mosaic_images(
     Returns:
     None
     """
+    start_time = time.time()
 
     output_folder = get_unique_folder_name(output_folder)
     if not os.path.exists(output_folder):
@@ -358,3 +377,10 @@ def make_mosaic_images(
             os.path.join(output_folder, merged_image_name.replace(".png", ".txt")), "w"
         ) as label_file:
             label_file.write("\n".join(label_content))
+
+    end_time = time.time()
+
+    console.print(
+        f"Successfully made mosaics in {round(end_time-start_time,2)} seconds",
+        style=SUCCESS_STYLE,
+    )
