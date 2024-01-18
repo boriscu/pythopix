@@ -99,9 +99,7 @@
 
   save_segmented_metrics_to_csv(metrics)
   ```
-
-Certainly! Here's the updated documentation for the `visualize_bounding_boxes` function, including the new `save_fig` parameter:
-
+
 ### `visualize_bounding_boxes`
 
 - **Description**:
