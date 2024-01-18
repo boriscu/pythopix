@@ -8,7 +8,7 @@ import shutil
 import tqdm
 import time
 from .theme import console, SUCCESS_STYLE, ERROR_STYLE
-from .utils import get_unique_folder_name, get_random_files
+from .utils import get_unique_folder_name, get_random_files, check_overlap_and_area
 
 
 def gaussian_noise(
@@ -342,6 +342,7 @@ def make_mosaic_images(
 
         height, width, _ = background_image.shape
         num_cutouts = random.randint(*cutouts_range)
+        placed_cutouts = []
         cutout_files = get_random_files(cutouts_folder, num_cutouts)
 
         label_content = []
@@ -354,12 +355,48 @@ def make_mosaic_images(
             if cutout_height > height // 2 or cutout_width > width:
                 continue  # Skip this cutout as it's too large
 
-            x_pos = random.randint(0, width - cutout_width)
-            y_pos = random.randint(height // 2, height - cutout_height)
+            attempts = 0
+            while attempts < 10:
+                x_pos = random.randint(0, width - cutout_width)
+                y_pos = random.randint(height // 2, height - cutout_height)
 
-            background_image[
-                y_pos : y_pos + cutout_height, x_pos : x_pos + cutout_width
-            ] = cutout_image
+                overlap = any(
+                    check_overlap_and_area(
+                        x_pos, y_pos, cutout_width, cutout_height, other
+                    )
+                    for other in placed_cutouts
+                )
+
+                if not overlap:
+                    break
+                attempts += 1
+
+            if attempts < 10:
+                cutout_image = cv2.imread(cutout_path, cv2.IMREAD_UNCHANGED)
+                cutout_height, cutout_width, num_channels = cutout_image.shape
+
+                if num_channels == 4:  # Image has an alpha channel
+                    alpha_s = cutout_image[:, :, 3] / 255.0
+                    alpha_l = 1.0 - alpha_s
+                    for c in range(0, 3):
+                        background_image[
+                            y_pos : y_pos + cutout_height,
+                            x_pos : x_pos + cutout_width,
+                            c,
+                        ] = (
+                            alpha_s * cutout_image[:, :, c]
+                            + alpha_l
+                            * background_image[
+                                y_pos : y_pos + cutout_height,
+                                x_pos : x_pos + cutout_width,
+                                c,
+                            ]
+                        )
+                else:  # Image does not have an alpha channel
+                    background_image[
+                        y_pos : y_pos + cutout_height, x_pos : x_pos + cutout_width
+                    ] = cutout_image
+                placed_cutouts.append((x_pos, y_pos, cutout_width, cutout_height))
 
             class_id = extract_class_from_filename(cutout_file)
             x_center = (x_pos + cutout_width / 2) / width
