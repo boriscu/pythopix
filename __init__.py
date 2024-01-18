@@ -23,7 +23,14 @@ from .comparison import (
     add_bboxes_to_image,
 )
 
-from .augmentations import gaussian_noise, random_erasing, apply_augmentations
+from .augmentations import (
+    gaussian_noise,
+    random_erasing,
+    apply_augmentations,
+    cut_images,
+    make_backgrounds,
+    make_mosaic_images,
+)
 
 __all__ = [
     "evaluate_dataset",
@@ -48,4 +55,7 @@ __all__ = [
     "gaussian_noise",
     "apply_augmentations",
     "random_erasing",
+    "cut_images",
+    "make_backgrounds",
+    "make_mosaic_images",
 ]
