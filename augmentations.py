@@ -8,6 +8,7 @@ import shutil
 import tqdm
 import time
 from .theme import console, SUCCESS_STYLE, ERROR_STYLE
+from .utils import get_unique_folder_name, get_random_files
 
 
 def gaussian_noise(
@@ -165,3 +166,177 @@ def apply_augmentations(
         f"Successfully augmented images in {round(end_time-start_time,2)} seconds",
         style=SUCCESS_STYLE,
     )
+
+
+def cut_images(
+    input_folder: str,
+    output_folder: str = "pythopix_results/cuts",
+    num_images: int = 20,
+) -> None:
+    """
+    Cuts out and saves bounding box regions from images based on YOLO format annotations.
+
+    This function processes images in a specified input folder, reads their corresponding YOLO
+    annotation files, and cuts out the annotated regions. The cropped images are saved in a given
+    output folder, with each image named as 'cutout_{class}_{serial_number}.png'. It handles images
+    with multiple bounding boxes and skips images without corresponding label files.
+
+    Args:
+    input_folder (str): Path to the folder containing images and their YOLO annotation files.
+    output_folder (str, optional): Path to the folder where cropped images will be saved.
+                                   Defaults to 'pythopix/cuts'.
+    num_images (int, optional): Number of images to process. Defaults to 20.
+
+    Returns:
+    None
+    """
+    output_folder = get_unique_folder_name(output_folder)
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+
+    images_processed = 0
+    serial_number = 0
+
+    for filename in tqdm.tqdm(os.listdir(input_folder), desc="Cutting images"):
+        if filename.endswith(".jpg") or filename.endswith(".png"):
+            image_path = os.path.join(input_folder, filename)
+            label_path = image_path.replace(".jpg", ".txt").replace(".png", ".txt")
+
+            if not os.path.exists(label_path) or images_processed >= num_images:
+                continue
+
+            image = cv2.imread(image_path)
+            height, width, _ = image.shape
+
+            with open(label_path, "r") as file:
+                for line in file:
+                    class_id, x_center, y_center, bbox_width, bbox_height = [
+                        float(x) for x in line.split()
+                    ]
+                    class_id = int(class_id)
+
+                    x = int((x_center - bbox_width / 2) * width)
+                    y = int((y_center - bbox_height / 2) * height)
+                    w = int(bbox_width * width)
+                    h = int(bbox_height * height)
+
+                    cropped_image = image[y : y + h, x : x + w]
+
+                    output_filename = f"cutout_{class_id}_{serial_number}.png"
+                    cv2.imwrite(
+                        os.path.join(output_folder, output_filename), cropped_image
+                    )
+                    serial_number += 1
+
+            images_processed += 1
+
+
+def make_backgrounds(
+    input_folder: str,
+    output_folder: str = "pythopix_results/backgrounds",
+    max_backgrounds=None,
+) -> None:
+    """
+    Copies a specified number of images without corresponding YOLO label files from the input folder
+    to an output folder. If the number is not specified, all found background images are copied.
+
+    This function processes images in a specified input folder and checks for the existence of
+    corresponding YOLO annotation files. Images without a label file are considered as backgrounds
+    and are copied to the specified output folder, up to a maximum number if specified.
+
+    Args:
+    input_folder (str): Path to the folder containing images and potentially their YOLO annotation files.
+    output_folder (str, optional): Path to the folder where background images will be saved.
+                                   Defaults to 'pythopix_results/backgrounds'.
+    max_backgrounds (int, optional): Maximum number of background images to copy. If None, all found
+                                     backgrounds will be copied. Defaults to None.
+
+    Returns:
+    None
+    """
+    output_folder = get_unique_folder_name(output_folder)
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+
+    backgrounds_copied = 0
+
+    for filename in tqdm.tqdm(os.listdir(input_folder), desc="Making backgrounds"):
+        if (max_backgrounds is not None) and (backgrounds_copied >= max_backgrounds):
+            break
+
+        if filename.endswith(".jpg") or filename.endswith(".png"):
+            image_path = os.path.join(input_folder, filename)
+            label_path = image_path.replace(".jpg", ".txt").replace(".png", ".txt")
+
+            if not os.path.exists(label_path):
+                shutil.copy(image_path, output_folder)
+                backgrounds_copied += 1
+
+
+def extract_class_from_filename(filename: str) -> int:
+    """Extracts the class ID from the filename."""
+    parts = filename.split("_")
+    if len(parts) >= 3 and parts[0] == "cutout":
+        return int(parts[1])
+    return -1  # Invalid class ID
+
+
+def make_mosaic_images(
+    cutouts_folder: str,
+    backgrounds_folder: str,
+    output_folder: str = "pythopix_results/mosaic_images",
+    num_images: int = 20,
+    cutouts_range: Tuple[int, int] = (1, 3),
+) -> None:
+    output_folder = get_unique_folder_name(output_folder)
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder, exist_ok=True)
+
+    for i in range(num_images):
+        background_image_name = random.choice(os.listdir(backgrounds_folder))
+        background_image_path = os.path.join(backgrounds_folder, background_image_name)
+        background_image = cv2.imread(background_image_path)
+
+        height, width, _ = background_image.shape
+        num_cutouts = random.randint(*cutouts_range)
+        cutout_files = get_random_files(cutouts_folder, num_cutouts)
+
+        label_content = []
+
+        for cutout_file in cutout_files:
+            cutout_path = os.path.join(cutouts_folder, cutout_file)
+            cutout_image = cv2.imread(cutout_path)
+            cutout_height, cutout_width, _ = cutout_image.shape
+
+            available_height = height - (2 * height // 3)
+            if cutout_height > available_height or cutout_width > width:
+                continue  # Skip this cutout as it's too large
+
+            # Random position in the lower third of the background image
+            x_pos = random.randint(0, width - cutout_width)
+            y_pos = random.randint(2 * height // 3, height - cutout_height)
+
+            # Insert the cutout image
+            background_image[
+                y_pos : y_pos + cutout_height, x_pos : x_pos + cutout_width
+            ] = cutout_image
+
+            # Create YOLO label
+            class_id = extract_class_from_filename(cutout_file)
+            x_center = (x_pos + cutout_width / 2) / width
+            y_center = (y_pos + cutout_height / 2) / height
+            bbox_width = cutout_width / width
+            bbox_height = cutout_height / height
+            label_content.append(
+                f"{class_id} {x_center} {y_center} {bbox_width} {bbox_height}"
+            )
+
+        # Save the merged image
+        merged_image_name = f"merged_image_{i}.jpg"
+        cv2.imwrite(os.path.join(output_folder, merged_image_name), background_image)
+
+        # Save the label file
+        with open(
+            os.path.join(output_folder, merged_image_name.replace(".jpg", ".txt")), "w"
+        ) as label_file:
+            label_file.write("\n".join(label_content))
