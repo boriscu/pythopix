@@ -288,11 +288,35 @@ def make_mosaic_images(
     num_images: int = 20,
     cutouts_range: Tuple[int, int] = (1, 3),
 ) -> None:
+    """
+    Creates mosaic images by superimposing cutout images onto background images.
+
+    This function selects a random background image and a random number of cutout images.
+    The cutout images are then placed at random locations in the lower half of the background image.
+    For each mosaic image created, a corresponding YOLO format label file is also generated,
+    containing the class and bounding box coordinates of each inserted cutout image.
+
+    The class of each cutout image is determined from its filename, which is expected to be in
+    the format 'cutout_{class}_{serial_number}.png'.
+
+    Args:
+    cutouts_folder (str): Path to the folder containing cutout images.
+    backgrounds_folder (str): Path to the folder containing background images.
+    output_folder (str): Path to the folder where the mosaic images and their label files will be saved.
+                         Defaults to 'pythopix_results/mosaic_images'.
+    num_images (int): Number of mosaic images to create. Defaults to 20.
+    cutouts_range (Tuple[int, int]): The range (inclusive) of the number of cutouts to be placed on each background.
+                                     Defaults to (1, 3).
+
+    Returns:
+    None
+    """
+
     output_folder = get_unique_folder_name(output_folder)
     if not os.path.exists(output_folder):
         os.makedirs(output_folder, exist_ok=True)
 
-    for i in range(num_images):
+    for i in tqdm.tqdm(range(num_images), desc="Making mosaics"):
         background_image_name = random.choice(os.listdir(backgrounds_folder))
         background_image_path = os.path.join(backgrounds_folder, background_image_name)
         background_image = cv2.imread(background_image_path)
@@ -308,20 +332,16 @@ def make_mosaic_images(
             cutout_image = cv2.imread(cutout_path)
             cutout_height, cutout_width, _ = cutout_image.shape
 
-            available_height = height - (2 * height // 3)
-            if cutout_height > available_height or cutout_width > width:
+            if cutout_height > height // 2 or cutout_width > width:
                 continue  # Skip this cutout as it's too large
 
-            # Random position in the lower third of the background image
             x_pos = random.randint(0, width - cutout_width)
-            y_pos = random.randint(2 * height // 3, height - cutout_height)
+            y_pos = random.randint(height // 2, height - cutout_height)
 
-            # Insert the cutout image
             background_image[
                 y_pos : y_pos + cutout_height, x_pos : x_pos + cutout_width
             ] = cutout_image
 
-            # Create YOLO label
             class_id = extract_class_from_filename(cutout_file)
             x_center = (x_pos + cutout_width / 2) / width
             y_center = (y_pos + cutout_height / 2) / height
@@ -331,11 +351,9 @@ def make_mosaic_images(
                 f"{class_id} {x_center} {y_center} {bbox_width} {bbox_height}"
             )
 
-        # Save the merged image
         merged_image_name = f"merged_image_{i}.jpg"
         cv2.imwrite(os.path.join(output_folder, merged_image_name), background_image)
 
-        # Save the label file
         with open(
             os.path.join(output_folder, merged_image_name.replace(".jpg", ".txt")), "w"
         ) as label_file:
