@@ -351,10 +351,10 @@ def make_mosaic_images(
                 f"{class_id} {x_center} {y_center} {bbox_width} {bbox_height}"
             )
 
-        merged_image_name = f"merged_image_{i}.jpg"
+        merged_image_name = f"merged_image_{i}.png"
         cv2.imwrite(os.path.join(output_folder, merged_image_name), background_image)
 
         with open(
-            os.path.join(output_folder, merged_image_name.replace(".jpg", ".txt")), "w"
+            os.path.join(output_folder, merged_image_name.replace(".png", ".txt")), "w"
         ) as label_file:
             label_file.write("\n".join(label_content))
