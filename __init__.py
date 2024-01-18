@@ -9,7 +9,7 @@ from .dataset_evaluation import (
 )
 from .data_handling import export_to_csv
 from .model_operations import process_image, segregate_images
-from .utils import custom_sort_key
+from .utils import custom_sort_key, check_overlap_and_area
 from .labels_operations import (
     extract_label_files,
     save_extracted_labels,
@@ -60,4 +60,5 @@ __all__ = [
     "make_backgrounds",
     "make_mosaic_images",
     "visualize_bounding_boxes",
+    "check_overlap_and_area",
 ]

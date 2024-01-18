@@ -21,23 +21,6 @@
   evaluate_dataset("path/to/test_images", model_path="path/to/model", num_images=50, verbose=True)
   ```
 
-### `calculate_bb_area`
-
-- **Description**: Calculates the surface area of a bounding box from a Label object.
-- **Parameters**:
-  - `label (Label)`: A Label object representing the bounding box and class ID.
-- **Returns**:
-
-  - `float`: The fractional surface area of the bounding box, as a proportion of the total image area.
-
-- **Usage**:
-
-  ```python
-  from pythopix.utils import calculate_bb_area
-
-  area = calculate_bb_area(label)
-  ```
-
 ### `plot_bb_distribution`
 
 - **Description**: Plots the distribution of bounding box areas from a list of YOLO label file paths and optionally saves the plot.
@@ -99,7 +82,7 @@
 
   save_segmented_metrics_to_csv(metrics)
   ```
-
+
 ### `visualize_bounding_boxes`
 
 - **Description**:
@@ -229,6 +212,8 @@ The `labels_operations` module in PythoPix provides tools for extracting, conver
   convert_json_to_txt_labels(json_label_files)
   ```
 
+## Utils
+
 ### `read_yolo_labels`
 
 - **Description**: Reads YOLO label files and returns a list of labels.
@@ -243,6 +228,56 @@ The `labels_operations` module in PythoPix provides tools for extracting, conver
 
   labels = read_yolo_labels('/path/to/label_file.txt')
   ```
+
+### `calculate_bb_area`
+
+- **Description**: Calculates the surface area of a bounding box from a Label object.
+- **Parameters**:
+  - `label (Label)`: A Label object representing the bounding box and class ID.
+- **Returns**:
+
+  - `float`: The fractional surface area of the bounding box, as a proportion of the total image area.
+
+- **Usage**:
+
+  ```python
+  from pythopix.utils import calculate_bb_area
+
+  area = calculate_bb_area(label)
+  ```
+
+### `check_overlap_and_area`
+
+- **Description**:
+
+  - Checks if two rectangular regions overlap and if the overlap exceeds a specified threshold percentage of the area of the first rectangle.
+
+- **Parameters**:
+
+  - `x1 (int)`: X-coordinate of the top-left corner of the first rectangle.
+  - `y1 (int)`: Y-coordinate of the top-left corner of the first rectangle.
+  - `w1 (int)`: Width of the first rectangle.
+  - `h1 (int)`: Height of the first rectangle.
+  - `other (Tuple[int, int, int, int])`: A tuple containing the x-coordinate, y-coordinate, width, and height of the second rectangle.
+  - `threshold (float, optional)`: Threshold for determining if the overlap is significant, default is set to 20% (0.2).
+
+- **Returns**:
+
+  - `bool`: Returns `True` if there is an overlap that is more than the specified threshold of the area of the first rectangle. Otherwise, it returns `False`.
+
+- **Usage**:
+
+  - Example of using `check_overlap_and_area`:
+
+    ```python
+    from pythopix.utils import check_overlap_and_area
+
+    overlap = check_overlap_and_area(10, 20, 100, 100, (50, 60, 100, 100))
+    if overlap:
+        print("Overlap is more than the threshold.")
+    else:
+        print("Overlap is within acceptable limits.")
+    ```
 
 ## Model Operations
 
@@ -513,7 +548,7 @@ The `comparison` module in PythoPix includes functions for comparing original an
 
 - **Description**:
 
-  - Creates mosaic images by overlaying cutout images onto background images. This function chooses a random background image and a specified number of cutout images, placing them randomly within the lower half of the background. It also generates corresponding YOLO format label files for each mosaic, detailing the class and bounding box coordinates of each inserted cutout.
+  - Creates mosaic images by overlaying cutout images onto background images. It selects a random background image and places a specified number of cutout images randomly within the lower half of the background. The function ensures that these cutout images do not overlap beyond a specified threshold. It also generates corresponding YOLO format label files for each mosaic, detailing the class and bounding box coordinates of each inserted cutout.
 
 - **Parameters**:
 
@@ -528,9 +563,7 @@ The `comparison` module in PythoPix includes functions for comparing original an
   - None: The function saves the mosaic images and label files to the specified output folder.
 
 - **Usage**:
-
-  - Example of using `make_mosaic_images` to create mosaic images:
-
+  - Example of using `make_mosaic_images`:
     ```python
     make_mosaic_images('path/to/cutouts', 'path/to/backgrounds', 'path/to/output', 10, (1, 5))
     ```
