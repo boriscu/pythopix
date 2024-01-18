@@ -100,26 +100,33 @@
   save_segmented_metrics_to_csv(metrics)
   ```
 
+Certainly! Here's the updated documentation for the `visualize_bounding_boxes` function, including the new `save_fig` parameter:
+
 ### `visualize_bounding_boxes`
 
 - **Description**:
 
-  - Displays an image with its bounding boxes as defined in the corresponding YOLO label file. The function is useful for visually verifying the accuracy of bounding box annotations in YOLO format. It reads the label file, which should have the same name as the image file but with a `.txt` extension, and draws the bounding boxes on the image.
+  - This function serves to display or save an image with its bounding boxes as defined in its corresponding YOLO label file. It's designed for visually verifying the accuracy of bounding box annotations. The function reads the label file, which should have the same name as the image file but with a `.txt` extension. It then draws the bounding boxes on the image. Depending on the `save_fig` parameter, it either displays the image with bounding boxes or saves it to a specified folder.
 
 - **Parameters**:
 
   - `image_path (str)`: The file path to the input image. The function expects to find a YOLO format label file with the same base name and in the same directory as this image file.
+  - `save_fig (bool, optional)`: If set to `True`, the function saves the image with bounding boxes to the `pythopix_results/figs` folder instead of displaying it. Defaults to `False`.
 
 - **Returns**:
 
-  - None: The function displays a window with the image and overlaid bounding boxes. The window remains open until any key is pressed.
+  - None: Based on the `save_fig` parameter, the function either displays a window with the image and overlaid bounding boxes or saves the image to a folder.
 
 - **Usage**:
 
-  - Here's an example of how to use the `visualize_bounding_boxes` function:
+  - Examples of using the `visualize_bounding_boxes` function:
 
     ```python
+    # To display the image with bounding boxes
     visualize_bounding_boxes("path/to/image.jpg")
+
+    # To save the image with bounding boxes
+    visualize_bounding_boxes("path/to/image.jpg", save_fig=True)
     ```
 
 ## Data Handling

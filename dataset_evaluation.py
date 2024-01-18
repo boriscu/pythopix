@@ -329,15 +329,18 @@ def save_segmented_metrics_to_csv(
         writer.writerow(box_loss)
 
 
-def visualize_bounding_boxes(image_path: str) -> None:
+def visualize_bounding_boxes(image_path: str, save_fig: bool = False) -> None:
     """
-    Displays an image with its bounding boxes as defined in its corresponding YOLO label file.
+    Displays an image with its bounding boxes as defined in its corresponding YOLO label file,
+    or saves the image if save_fig is True.
 
     Args:
     image_path (str): Path to the image file.
+    save_fig (bool, optional): If True, saves the image with bounding boxes to a designated folder
+                               instead of displaying it. Defaults to False.
 
     Returns:
-    None: The function displays the image with bounding boxes.
+    None
     """
     image = cv2.imread(image_path)
     if image is None:
@@ -345,7 +348,6 @@ def visualize_bounding_boxes(image_path: str) -> None:
         return
 
     height, width, _ = image.shape
-
     label_path = image_path.replace(".jpg", ".txt").replace(".png", ".txt")
 
     if not os.path.exists(label_path):
@@ -365,7 +367,19 @@ def visualize_bounding_boxes(image_path: str) -> None:
 
             cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
-    # Display the image
-    cv2.imshow("Image with Bounding Boxes", image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    if save_fig:
+        output_folder = "pythopix_results/figs"
+        if not os.path.exists(output_folder):
+            os.makedirs(output_folder)
+        # Extract the filename without extension
+        base_filename = os.path.splitext(os.path.basename(image_path))[0]
+        output_filename = os.path.join(
+            output_folder, f"bbox_on_image_{base_filename}.png"
+        )
+        cv2.imwrite(output_filename, image)
+        print(f"Image saved as {output_filename}")
+    else:
+        # Display the image
+        cv2.imshow("Image with Bounding Boxes", image)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
