@@ -100,6 +100,28 @@
   save_segmented_metrics_to_csv(metrics)
   ```
 
+### `visualize_bounding_boxes`
+
+- **Description**:
+
+  - Displays an image with its bounding boxes as defined in the corresponding YOLO label file. The function is useful for visually verifying the accuracy of bounding box annotations in YOLO format. It reads the label file, which should have the same name as the image file but with a `.txt` extension, and draws the bounding boxes on the image.
+
+- **Parameters**:
+
+  - `image_path (str)`: The file path to the input image. The function expects to find a YOLO format label file with the same base name and in the same directory as this image file.
+
+- **Returns**:
+
+  - None: The function displays a window with the image and overlaid bounding boxes. The window remains open until any key is pressed.
+
+- **Usage**:
+
+  - Here's an example of how to use the `visualize_bounding_boxes` function:
+
+    ```python
+    visualize_bounding_boxes("path/to/image.jpg")
+    ```
+
 ## Data Handling
 
 This module focuses on handling and exporting image data, particularly useful in post-analysis data management.

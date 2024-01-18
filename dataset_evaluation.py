@@ -1,6 +1,7 @@
 import csv
 import os
 import time
+import cv2
 import torch
 from tqdm import tqdm
 import matplotlib.pyplot as plt
@@ -326,3 +327,45 @@ def save_segmented_metrics_to_csv(
         writer.writerow(false_positives)
         writer.writerow(false_negatives)
         writer.writerow(box_loss)
+
+
+def visualize_bounding_boxes(image_path: str) -> None:
+    """
+    Displays an image with its bounding boxes as defined in its corresponding YOLO label file.
+
+    Args:
+    image_path (str): Path to the image file.
+
+    Returns:
+    None: The function displays the image with bounding boxes.
+    """
+    image = cv2.imread(image_path)
+    if image is None:
+        print(f"Image not found at {image_path}")
+        return
+
+    height, width, _ = image.shape
+
+    label_path = image_path.replace(".jpg", ".txt").replace(".png", ".txt")
+
+    if not os.path.exists(label_path):
+        print(f"No corresponding label file found for {image_path}")
+        return
+
+    with open(label_path, "r") as file:
+        for line in file:
+            class_id, x_center, y_center, bbox_width, bbox_height = [
+                float(x) for x in line.split()
+            ]
+
+            x = int((x_center - bbox_width / 2) * width)
+            y = int((y_center - bbox_height / 2) * height)
+            w = int(bbox_width * width)
+            h = int(bbox_height * height)
+
+            cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+    # Display the image
+    cv2.imshow("Image with Bounding Boxes", image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
