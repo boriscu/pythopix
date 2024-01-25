@@ -187,6 +187,52 @@ def plot_label_size_distribution(
         plt.show()
 
 
+def plot_label_ratios(input_folder: str, save: bool = False, show: bool = True) -> None:
+    """
+    Plots and optionally saves the distribution of label aspect ratios (width/height)
+    in a dataset, as extracted from YOLO label files.
+
+    This function reads each label file, finds the corresponding image file to
+    obtain actual dimensions, calculates the aspect ratio of the bounding boxes,
+    and generates a histogram of these ratios.
+
+    Parameters:
+    - input_folder (str): Path to the folder containing images and their corresponding YOLO label files.
+    - save (bool, optional): If set to `True`, the plot is saved to 'pythopix_results/figs/label_ratios.png'.
+                             Defaults to `False`.
+    - show (bool): If True, shows the plot. Defaults to True
+
+
+    Returns:
+    - None: Based on the `save` parameter, the function either displays the plot or saves it to a specified directory.
+    """
+
+    label_files = [
+        os.path.join(input_folder, f)
+        for f in os.listdir(input_folder)
+        if f.endswith(".txt")
+    ]
+    widths, heights = extract_label_sizes(label_files)
+
+    ratios = [
+        w / h if h != 0 else 0 for w, h in zip(widths, heights)
+    ]  # Avoid division by zero
+
+    plt.figure(figsize=(8, 6))
+    plt.hist(ratios, bins=30, color="purple", alpha=0.7)
+    plt.title("Label Aspect Ratio Distribution")
+    plt.xlabel("Aspect Ratio (Width/Height)")
+    plt.ylabel("Frequency")
+    plt.grid(True)
+
+    if save:
+        os.makedirs("pythopix_results/figs", exist_ok=True)
+        plt.savefig("pythopix_results/figs/label_ratios.png")
+
+    if show:
+        plt.show()
+
+
 def calculate_segmented_metrics(
     folder_path: str,
     model: YOLO = None,

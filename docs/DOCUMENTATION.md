@@ -132,6 +132,32 @@
   plot_label_size_distribution('path/to/input_folder', save=True)
   ```
 
+### `plot_label_ratios`
+
+- **Description**: This function plots the distribution of label aspect ratios (width divided by height) for a set of images using their corresponding YOLO label files. It calculates the aspect ratio for each bounding box in the label files, then generates and displays a histogram of these ratios. The function can optionally save the histogram plot to a file.
+
+- **Parameters**:
+
+  - `input_folder (str)`: Path to the folder containing images and their corresponding YOLO label files.
+  - `save (bool, optional)`: If set to `True`, the function saves the plot as 'label_ratios.png' in the 'pythopix_results/figs' directory. Defaults to `False`.
+  - `show (bool)`: If `True`, displays the plot. Defaults to `True`.
+
+- **Returns**:
+
+  - None: The function displays or saves the plot based on the `save` and `show` parameters but does not return any value.
+
+- **Usage**:
+
+  ```python
+  from pythopix.dataset_evaluation import plot_label_ratios
+
+  # To display the plot
+  plot_label_ratios('path/to/input_folder')
+
+  # To save the plot
+  plot_label_ratios('path/to/input_folder', save=True)
+  ```
+
 ## Data Handling
 
 This module focuses on handling and exporting image data, particularly useful in post-analysis data management.
