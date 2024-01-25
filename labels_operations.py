@@ -1,7 +1,8 @@
 import os
-from typing import List, Dict, NamedTuple
+from typing import List, Dict, NamedTuple, Tuple
 import shutil
 import json
+import cv2
 from tqdm import tqdm
 import numpy as np
 from .theme import ERROR_STYLE, console, INFO_STYLE, SUCCESS_STYLE
@@ -61,6 +62,46 @@ def read_yolo_labels(file_path: str) -> List[Label]:
             labels.append(Label(int(class_id), x_center, y_center, width, height))
 
     return labels
+
+
+def extract_label_sizes(label_files: List[str]) -> Tuple[List[int], List[int]]:
+    """
+    Extracts the widths and heights of bounding boxes in pixels from YOLO label files.
+
+    This function iterates through a list of YOLO label files, reading the normalized
+    bounding box dimensions (width and height) for each box in each file. It then
+    converts these normalized dimensions to pixel dimensions based on the corresponding
+    image size.
+
+    Note:
+    This function assumes that each label file has a corresponding image file in the
+    same directory and with the same base filename but different extension (.jpg).
+
+    Parameters:
+    - label_files (List[str]): A list of file paths to YOLO label files.
+
+    Returns:
+    - Tuple[List[int], List[int]]: Two lists containing the widths and heights of the
+                                   bounding boxes in pixels, respectively.
+    """
+    widths, heights = [], []
+    for label_file in tqdm(label_files, desc="Reading label sizes"):
+        image_file = label_file.replace(".txt", ".png")
+        if os.path.exists(image_file):
+            image = cv2.imread(image_file)
+            img_height, img_width = image.shape[:2]
+
+            with open(label_file, "r") as file:
+                for line in file:
+                    _, x_center, y_center, width, height = map(float, line.split())
+                    pixel_width = int(width * img_width)
+                    pixel_height = int(height * img_height)
+                    widths.append(pixel_width)
+                    heights.append(pixel_height)
+        else:
+            print(f"Image file corresponding to {label_file} not found.")
+
+    return widths, heights
 
 
 def extract_label_files(source_folder: str, label_type: str = "txt") -> List[str]:

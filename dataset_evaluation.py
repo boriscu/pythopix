@@ -13,7 +13,12 @@ from .data_handling import export_to_csv
 from .model_operations import process_image, segregate_images
 from .utils import custom_sort_key
 from .theme import console, INFO_STYLE, SUCCESS_STYLE
-from .labels_operations import Label, extract_label_files, read_yolo_labels
+from .labels_operations import (
+    Label,
+    extract_label_files,
+    extract_label_sizes,
+    read_yolo_labels,
+)
 
 
 def evaluate_dataset(
@@ -132,6 +137,54 @@ def plot_bb_distribution(label_paths: List[str], save: bool = False) -> None:
         plt.savefig("pythopix_results/bbox_distribution.png")
 
     plt.show()
+
+
+def plot_label_size_distribution(
+    input_folder: str, save: bool = False, show: bool = True
+) -> None:
+    """
+    Plots the distribution of label widths and heights in pixels from YOLO label files.
+
+    This function reads YOLO label files in the specified input folder, extracts
+    the widths and heights of bounding boxes in pixels, and plots their distributions in
+    two subplots. If the save flag is set, it saves the plot to a specified path.
+
+    Parameters:
+    - input_folder (str): Path to the folder containing images and YOLO label files.
+    - save (bool): If True, saves the plot to 'pythopix_results/figs/label_size_distribution.png'.
+                   Defaults to False.
+    - show (bool): If True, shows the plot. Defaults to True
+
+    Returns:
+    - None
+    """
+
+    label_files = [
+        os.path.join(input_folder, f)
+        for f in os.listdir(input_folder)
+        if f.endswith(".txt")
+    ]
+
+    widths, heights = extract_label_sizes(label_files)
+
+    fig, axs = plt.subplots(1, 2, figsize=(12, 6))
+    axs[0].hist(widths, bins=30, color="blue", alpha=0.7)
+    axs[0].set_title("Label Width Distribution in Pixels")
+    axs[0].set_xlabel("Width (pixels)")
+    axs[0].set_ylabel("Frequency")
+
+    axs[1].hist(heights, bins=30, color="green", alpha=0.7)
+    axs[1].set_title("Label Height Distribution in Pixels")
+    axs[1].set_xlabel("Height (pixels)")
+
+    plt.tight_layout()
+
+    if save:
+        os.makedirs("pythopix_results/figs", exist_ok=True)
+        plt.savefig("pythopix_results/figs/label_size_distribution.png")
+
+    if show:
+        plt.show()
 
 
 def calculate_segmented_metrics(

@@ -78,7 +78,7 @@
 - **Usage**:
 
   ```python
-  from pythopix.export import save_segmented_metrics_to_csv
+  from pythopix.dataset_evaluation import save_segmented_metrics_to_csv
 
   save_segmented_metrics_to_csv(metrics)
   ```
@@ -103,12 +103,34 @@
   - Examples of using the `visualize_bounding_boxes` function:
 
     ```python
+    from pythopix.dataset_evaluation import visualize_bounding_boxes
+
     # To display the image with bounding boxes
     visualize_bounding_boxes("path/to/image.jpg")
 
     # To save the image with bounding boxes
     visualize_bounding_boxes("path/to/image.jpg", save_fig=True)
     ```
+
+### `plot_label_size_distribution`
+
+- **Description**: Plots and optionally saves the distribution of label widths and heights in pixels, as extracted from YOLO label files. The function reads each label file, finds the corresponding image file to obtain actual dimensions, and then calculates the pixel dimensions of the bounding boxes. It generates two subplots: one for the width distribution and another for the height distribution.
+- **Parameters**:
+  - `input_folder (str)`: Path to the folder containing images and their corresponding YOLO label files.
+  - `save (bool, optional)`: If set to `True`, the plot is saved to 'pythopix_results/figs/label_size_distribution.png'. Defaults to `False`.
+- **Returns**:
+  - None: Based on the `save` parameter, the function either displays the plot or saves it to a specified directory.
+- **Usage**:
+
+  ```python
+  from pythopix.dataset_evaluation import plot_label_size_distribution
+
+  # To display the plot
+  plot_label_size_distribution('path/to/input_folder')
+
+  # To save the plot
+  plot_label_size_distribution('path/to/input_folder', save=True)
+  ```
 
 ## Data Handling
 
@@ -210,6 +232,26 @@ The `labels_operations` module in PythoPix provides tools for extracting, conver
   from pythopix.labels_operations import convert_json_to_txt_labels
 
   convert_json_to_txt_labels(json_label_files)
+  ```
+
+### `extract_label_sizes`
+
+- **Description**: Extracts the widths and heights of bounding boxes in pixels from a list of YOLO label files.
+
+- **Parameters**:
+
+  - `label_files (List[str])`: A list of file paths to YOLO label files.
+
+- **Returns**:
+
+  - `Tuple[List[int], List[int]]`: Two lists containing the widths and heights of the bounding boxes in pixels, respectively.
+
+- **Usage**:
+
+  ```python
+  from pythopix.labels_operations import extract_label_sizes
+
+  widths, heights = extract_label_sizes(label_files)
   ```
 
 ## Utils
