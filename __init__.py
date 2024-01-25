@@ -6,6 +6,8 @@ from .dataset_evaluation import (
     plot_metrics_by_segment,
     save_segmented_metrics_to_csv,
     visualize_bounding_boxes,
+    plot_label_ratios,
+    plot_label_size_distribution,
 )
 from .data_handling import export_to_csv
 from .model_operations import process_image, segregate_images
@@ -16,6 +18,9 @@ from .labels_operations import (
     convert_json_to_txt_labels,
     convert_txt_to_json_labels,
     read_yolo_labels,
+    convert_to_pixels,
+    read_labels,
+    filter_and_resize_labels,
 )
 from .comparison import (
     compare_labels,
@@ -61,4 +66,9 @@ __all__ = [
     "make_mosaic_images",
     "visualize_bounding_boxes",
     "check_overlap_and_area",
+    "plot_label_ratios",
+    "plot_label_size_distribution",
+    "convert_to_pixels",
+    "read_labels",
+    "filter_and_resize_labels",
 ]
