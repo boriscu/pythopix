@@ -1,10 +1,13 @@
 import os
-from typing import List, Dict, NamedTuple, Tuple
+import time
+from typing import List, Dict, NamedTuple, Optional, Tuple
 import shutil
 import json
 import cv2
 from tqdm import tqdm
 import numpy as np
+
+from .utils import check_overlap_and_area
 from .theme import ERROR_STYLE, console, INFO_STYLE, SUCCESS_STYLE
 
 
@@ -293,3 +296,129 @@ def convert_json_to_txt_labels(
         "Conversion successful.",
         style=SUCCESS_STYLE,
     )
+
+
+def filter_and_resize_labels(
+    input_folder: str,
+    output_folder: str = "pythopix_results/filtered_labels",
+    min_width: int = 50,
+    min_height: int = 50,
+    resize_aspect_ratio: Tuple[int, int] = (100, 100),
+    alpha: float = 0.2,
+    allowed_classes: Optional[List[int]] = None,
+) -> None:
+    """
+    Processes images from the input folder, filters labels based on non-overlapping and
+    minimum size criteria, then resizes and saves them to the output folder.
+
+    Args:
+    - input_folder (str): Path to the folder containing images and their corresponding YOLO label files.
+    - output_folder (str): Path to the folder where the processed labels will be saved.
+    - min_width (int): Minimum width in pixels for the labels to be considered.
+    - min_height (int): Minimum height in pixels for the labels to be considered.
+    - resize_aspect_ratio (Tuple[int, int]): The aspect ratio to resize the labels to.
+    - alpha (float): Threshold for maximum allowed overlap as a fraction of the first rectangle's area.
+
+    Returns:
+    - None
+    """
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+
+    start_time = time.time()
+
+    for image_file in tqdm(os.listdir(input_folder), desc="Filtering labels"):
+        if image_file.endswith(".png"):
+            image_path = os.path.join(input_folder, image_file)
+            label_path = image_path.replace(".png", ".txt")
+
+            if os.path.exists(label_path):
+                image = cv2.imread(image_path)
+                img_height, img_width = image.shape[:2]
+                labels = read_labels(label_path)
+
+                filtered_labels = []
+                for i, (class_id, label) in enumerate(labels):
+                    if allowed_classes is None or class_id in allowed_classes:
+                        pixel_label = convert_to_pixels(label, img_width, img_height)
+                        if pixel_label[2] >= min_width and pixel_label[3] >= min_height:
+                            overlap = False
+                            for j, (_, other_label) in enumerate(labels):
+                                if i != j and check_overlap_and_area(
+                                    *label, other_label, threshold=alpha
+                                ):
+                                    overlap = True
+                                    break
+                            if not overlap:
+                                filtered_labels.append(pixel_label)
+
+                for i, label in enumerate(filtered_labels):
+                    cropped_image = crop_and_resize(image, label, resize_aspect_ratio)
+                    cv2.imwrite(
+                        os.path.join(
+                            output_folder,
+                            f"{os.path.splitext(image_file)[0]}_label_{i}.png",
+                        ),
+                        cropped_image,
+                    )
+    end_time = time.time()
+    console.print(
+        f"Successfuly filtered labels, took {round(end_time-start_time,2)} seconds",
+        style=SUCCESS_STYLE,
+    )
+
+
+def read_labels(label_file: str) -> List[Tuple[int, Tuple[float, float, float, float]]]:
+    """
+    Reads YOLO label files and returns a list of labels with class IDs and normalized bounding box coordinates.
+
+    Each label in the label file is expected to be in the format:
+    class_id x_center y_center width height, where all values are normalized relative to the image size.
+
+    Args:
+    - label_file (str): Path to the YOLO label file.
+
+    Returns:
+    - List[Tuple[int, Tuple[float, float, float, float]]]: A list of tuples where each tuple contains:
+        - int: The class ID of the label.
+        - Tuple[float, float, float, float]: The normalized bounding box coordinates (x_center, y_center, width, height).
+    """
+    labels = []
+    with open(label_file, "r") as file:
+        for line in file:
+            class_id, x_center, y_center, width, height = map(float, line.split())
+            labels.append((int(class_id), (x_center, y_center, width, height)))
+    return labels
+
+
+def convert_to_pixels(
+    label: Tuple[float, float, float, float], img_width: int, img_height: int
+) -> Tuple[int, int, int, int]:
+    """
+    Converts normalized YOLO label coordinates to pixel coordinates based on the image dimensions.
+
+    Args:
+    - label (Tuple[float, float, float, float]): Normalized bounding box coordinates (x_center, y_center, width, height).
+    - img_width (int): The width of the image in pixels.
+    - img_height (int): The height of the image in pixels.
+
+    Returns:
+    - Tuple[int, int, int, int]: The bounding box coordinates in pixel values (x1, y1, width, height).
+    """
+    x_center, y_center, width, height = label
+    x1 = int((x_center - width / 2) * img_width)
+    y1 = int((y_center - height / 2) * img_height)
+    w = int(width * img_width)
+    h = int(height * img_height)
+    return x1, y1, w, h
+
+
+def crop_and_resize(
+    image: np.ndarray,
+    label: Tuple[int, int, int, int],
+    resize_aspect_ratio: Tuple[int, int],
+) -> np.ndarray:
+    x, y, w, h = label
+    cropped = image[y : y + h, x : x + w]
+    resized = cv2.resize(cropped, resize_aspect_ratio)
+    return resized

@@ -280,6 +280,82 @@ The `labels_operations` module in PythoPix provides tools for extracting, conver
   widths, heights = extract_label_sizes(label_files)
   ```
 
+### `filter_and_resize_labels`
+
+- **Description**: This function processes images in a given input folder. It filters labels based on non-overlapping criteria, minimum size, and specified allowed classes. Then, it resizes and saves the labels to the output folder.
+
+- **Parameters**:
+
+  - `input_folder (str)`: Path to the folder containing images and their corresponding YOLO label files.
+  - `output_folder (str)`: Path to the folder where the processed labels will be saved. Defaults to "pythopix_results/filtered_labels".
+  - `min_width (int)`: Minimum width in pixels for the labels to be considered.
+  - `min_height (int)`: Minimum height in pixels for the labels to be considered.
+  - `resize_aspect_ratio (Tuple[int, int])`: The aspect ratio to resize the labels to.
+  - `alpha (float)`: Threshold for maximum allowed overlap as a fraction of the first rectangle's area.
+  - `allowed_classes (Optional[List[int]])`: List of allowed class IDs for filtering labels. If `None`, all classes are processed.
+
+- **Returns**:
+
+  - None
+
+- **Usage**:
+
+  ```python
+  from pythopix.labels_operations import filter_and_resize_labels
+
+  # Basic usage with default parameters
+  filter_and_resize_labels('path/to/input_folder')
+
+  # Advanced usage with specified parameters
+  filter_and_resize_labels('path/to/input_folder', 'path/to/output_folder', 50, 50, (100, 100), 0.2, [0, 1, 2])
+  ```
+
+---
+
+### `read_labels`
+
+- **Description**: Reads YOLO label files and returns a list of labels with class IDs and normalized bounding box coordinates.
+
+- **Parameters**:
+
+  - `label_file (str)`: Path to the YOLO label file.
+
+- **Returns**:
+
+  - `List[Tuple[int, Tuple[float, float, float, float]]]`: A list of tuples where each tuple contains a class ID and normalized bounding box coordinates (x_center, y_center, width, height).
+
+- **Usage**:
+
+  ```python
+  from pythopix.labels_operations import read_labels
+
+  labels = read_labels('path/to/label_file.txt')
+  ```
+
+---
+
+### `convert_to_pixels`
+
+- **Description**: Converts normalized YOLO label coordinates to pixel coordinates based on the image dimensions.
+
+- **Parameters**:
+
+  - `label (Tuple[float, float, float, float])`: Normalized bounding box coordinates (x_center, y_center, width, height).
+  - `img_width (int)`: The width of the image in pixels.
+  - `img_height (int)`: The height of the image in pixels.
+
+- **Returns**:
+
+  - `Tuple[int, int, int, int]`: The bounding box coordinates in pixel values (x1, y1, width, height).
+
+- **Usage**:
+
+  ```python
+  from pythopix.labels_operations import convert_to_pixels
+
+  pixel_coordinates = convert_to_pixels((0.5, 0.5, 0.2, 0.2), 1920, 1080)
+  ```
+
 ## Utils
 
 ### `read_yolo_labels`
