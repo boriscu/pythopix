@@ -5,6 +5,8 @@ import numpy as np
 import os
 import glob
 import shutil
+import torch
+from torchvision.utils import save_image
 import tqdm
 import time
 from .theme import console, SUCCESS_STYLE, ERROR_STYLE
@@ -421,3 +423,64 @@ def make_mosaic_images(
         f"Successfully made mosaics in {round(end_time-start_time,2)} seconds",
         style=SUCCESS_STYLE,
     )
+
+
+def generate_single_image(
+    generator: torch.nn.Module,
+    device: torch.device,
+    nz: int,
+    save: bool = False,
+    output_dir: str = "pythopix_results/dcgan_fake_images",
+) -> torch.Tensor:
+    """
+    Generates a single fake image using a trained Generator.
+
+    Args:
+        generator (torch.nn.Module): The trained Generator model.
+        device (torch.device): Device on which to generate the image.
+        nz (int): Size of the latent z vector.
+        save (bool): Whether to save the generated image.
+        output_dir (str): Directory to save the generated image.
+
+    Returns:
+        torch.Tensor: The generated fake image.
+    """
+    with torch.no_grad():
+        noise = torch.randn(1, nz, 1, 1, device=device)
+        fake_image = generator(noise)
+        if save:
+            os.makedirs(output_dir, exist_ok=True)
+            save_image(fake_image, os.path.join(output_dir, "fake_image.png"))
+        return fake_image
+
+
+def generate_fake_images(
+    generator: torch.nn.Module,
+    device: torch.device,
+    nz: int,
+    num_images: int = 64,
+    save: bool = False,
+    output_dir: str = "pythopix_results/dcgan_fake_images",
+) -> torch.Tensor:
+    """
+    Generates multiple fake images using a trained Generator.
+
+    Args:
+        generator (torch.nn.Module): The trained Generator model.
+        device (torch.device): Device on which to generate the images.
+        nz (int): Size of the latent z vector.
+        num_images (int): Number of fake images to generate.
+        save (bool): Whether to save the generated images.
+        output_dir (str): Directory to save the generated images.
+
+    Returns:
+        torch.Tensor: A batch of fake images.
+    """
+    with torch.no_grad():
+        noise = torch.randn(num_images, nz, 1, 1, device=device)
+        fake_images = generator(noise)
+        if save:
+            os.makedirs(output_dir, exist_ok=True)
+            for i, img in enumerate(fake_images):
+                save_image(img, os.path.join(output_dir, f"fake_image_{i}.png"))
+        return fake_images
