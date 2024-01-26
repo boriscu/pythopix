@@ -353,14 +353,22 @@ def filter_and_resize_labels(
                                 filtered_labels.append(pixel_label)
 
                 for i, label in enumerate(filtered_labels):
-                    cropped_image = crop_and_resize(image, label, resize_aspect_ratio)
-                    cv2.imwrite(
-                        os.path.join(
-                            output_folder,
-                            f"{os.path.splitext(image_file)[0]}_label_{i}.png",
-                        ),
-                        cropped_image,
-                    )
+                    try:
+                        cropped_image = crop_and_resize(
+                            image, label, resize_aspect_ratio
+                        )
+                        cv2.imwrite(
+                            os.path.join(
+                                output_folder,
+                                f"{os.path.splitext(image_file)[0]}_label_{i}.png",
+                            ),
+                            cropped_image,
+                        )
+                    except cv2.error as e:
+                        console.print(
+                            f"Error processing {image_file}: {e}", style=ERROR_STYLE
+                        )
+
     end_time = time.time()
     console.print(
         f"Successfuly filtered labels, took {round(end_time-start_time,2)} seconds",
