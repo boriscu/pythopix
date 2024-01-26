@@ -58,9 +58,12 @@ class Generator(nn.Module):
             nn.BatchNorm2d(ngf),
             nn.ReLU(True),
             # state size. ``(ngf) x 32 x 32``
-            nn.ConvTranspose2d(ngf, nc, 4, 2, 1, bias=False),
-            nn.Tanh()
-            # state size. ``(nc) x 64 x 64``
+            nn.ConvTranspose2d(ngf, ngf // 2, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(ngf // 2),
+            nn.ReLU(True),
+            # state size. ``(ngf//2) x 64 x 64``
+            nn.ConvTranspose2d(ngf // 2, nc, 4, 2, 1, bias=False),
+            nn.Tanh(),
         )
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
@@ -102,8 +105,12 @@ class Discriminator(nn.Module):
         super(Discriminator, self).__init__()
         self.ngpu = ngpu
         self.main = nn.Sequential(
-            # input is ``(nc) x 64 x 64``
-            nn.Conv2d(nc, ndf, 4, 2, 1, bias=False),
+            # input is ``(nc) x 128 x 128``
+            nn.Conv2d(nc, ndf // 2, 4, 2, 1, bias=False),
+            nn.LeakyReLU(0.2, inplace=True),
+            # state size. ``(ndf//2) x 64 x 64``
+            nn.Conv2d(ndf // 2, ndf, 4, 2, 1, bias=False),
+            nn.BatchNorm2d(ndf),
             nn.LeakyReLU(0.2, inplace=True),
             # state size. ``(ndf) x 32 x 32``
             nn.Conv2d(ndf, ndf * 2, 4, 2, 1, bias=False),
@@ -166,7 +173,6 @@ class DCGAN:
         lr: float = 0.0002,
         beta1: float = 0.5,
         batch_size: int = 128,
-        image_size: int = 64,
         workers: int = 2,
         num_epochs: int = 5,
     ):
@@ -179,7 +185,7 @@ class DCGAN:
         self.beta1 = beta1
         self.dataroot = dataroot
         self.batch_size = batch_size
-        self.image_size = image_size
+        self.image_size = 128
         self.workers = workers
         self.num_epochs = num_epochs
         self.device = torch.device(

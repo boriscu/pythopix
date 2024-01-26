@@ -711,3 +711,46 @@ The `comparison` module in PythoPix includes functions for comparing original an
     ```python
     make_mosaic_images('path/to/cutouts', 'path/to/backgrounds', 'path/to/output', 10, (1, 5))
     ```
+
+## Models
+
+Models module contains various ml models
+
+### `DCGAN`
+
+- **Description**: Initializes and trains a Deep Convolutional Generative Adversarial Network (DCGAN). The DCGAN consists of a generator and a discriminator that are trained adversarially to generate realistic images.
+- **Parameters**:
+  - `dataroot (str)`: Root directory for the dataset.
+  - `ngpu (int)`: Number of GPUs available. Defaults to 1.
+  - `nz (int)`: Size of the latent Z vector. Defaults to 100.
+  - `ngf (int)`: Size of feature maps in the generator. Defaults to 128.
+  - `ndf (int)`: Size of feature maps in the discriminator. Defaults to 128.
+  - `nc (int)`: Number of channels in the images. Defaults to 3.
+  - `lr (float)`: Learning rate for optimizers. Defaults to 0.0002.
+  - `beta1 (float)`: Beta1 hyperparameter for Adam optimizers. Defaults to 0.5.
+  - `batch_size (int)`: Batch size during training. Defaults to 128.
+  - `workers (int)`: Number of worker threads for loading the data. Defaults to 2.
+  - `num_epochs (int)`: Number of training epochs. Defaults to 5.
+- **Methods**:
+  - `train`: Trains the DCGAN model. Saves checkpoints and model weights at specified intervals, and returns training statistics including losses and image samples.
+- **Usage**:
+
+  ```python
+  from pythopix.models import DCGAN
+
+  dcgan = DCGAN(
+      ngpu=1,
+      nz=100,
+      ngf=128,
+      ndf=128,
+      nc=3,
+      lr=0.0002,
+      beta1=0.5,
+      dataroot="pythopix_results\cuts",
+      batch_size=128,
+      workers=2,
+      num_epochs=5
+  )
+
+  dcgan.train()
+  ```
