@@ -1,4 +1,5 @@
 import os
+import random
 import time
 from typing import Tuple
 import torch
@@ -287,7 +288,12 @@ class DCGAN:
         torch.save(self.netG, os.path.join(checkpoint_dir, "generator.pt"))
         torch.save(self.netD, os.path.join(checkpoint_dir, "discriminator.pt"))
 
-    def train(self, checkpoint_interval: int = 5, best_model_criteria: str = "lossD"):
+    def train(
+        self,
+        checkpoint_interval: int = 5,
+        best_model_criteria: str = "lossG",
+        seed: int = 999,
+    ):
         """
         Here, we will closely follow Algorithm 1 from the Goodfellow's paper, while abiding by some of the best practices shown in ganhacks.
         Namely, we will “construct different mini-batches for real and fake” images,
@@ -314,12 +320,16 @@ class DCGAN:
         Args:
             checkpoint_interval (int): Interval (in epochs) at which to save a checkpoint of the model.
             best_model_criteria (str): Criteria to decide the best model ('lossD' or 'lossG').
+            seed (int): Random seed for reproducibility.
 
         Returns:
             G_losses (list): A list of losses for the Generator recorded during training.
             D_losses (list): A list of losses for the Discriminator recorded during training.
             img_list (list): A list of generated image grids, each grid is saved after a certain number of iterations.
         """
+        random.seed(seed)
+        torch.manual_seed(seed)
+        torch.use_deterministic_algorithms(True)
         start_time = time.time()
 
         img_list = []
@@ -430,6 +440,7 @@ class DCGAN:
                     with torch.no_grad():
                         fake = self.netG(self.fixed_noise).detach().cpu()
                         img_grid = vutils.make_grid(fake, padding=2, normalize=True)
+
                     img_list.append(img_grid)
 
                     save_path = os.path.join(

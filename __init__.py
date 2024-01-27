@@ -36,7 +36,7 @@ from .augmentations import (
     cut_images,
     make_backgrounds,
     make_mosaic_images,
-    generate_single_image,
+    generate_fake_image,
     generate_fake_images,
 )
 
@@ -76,6 +76,6 @@ __all__ = [
     "read_labels",
     "filter_and_resize_labels",
     "DCGAN",
-    "generate_single_image",
+    "generate_fake_image",
     "generate_fake_images",
 ]
