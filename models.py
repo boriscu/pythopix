@@ -293,6 +293,10 @@ class DCGAN:
         checkpoint_interval: int = 5,
         best_model_criteria: str = "lossG",
         seed: int = 999,
+        discriminator_update_ratio: int = 1,
+        generator_update_ratio: int = 2,
+        smooth_labels: bool = False,
+        smooth_factor: float = 0.1,
     ):
         """
         Here, we will closely follow Algorithm 1 from the Goodfellow's paper, while abiding by some of the best practices shown in ganhacks.
@@ -321,6 +325,10 @@ class DCGAN:
             checkpoint_interval (int): Interval (in epochs) at which to save a checkpoint of the model.
             best_model_criteria (str): Criteria to decide the best model ('lossD' or 'lossG').
             seed (int): Random seed for reproducibility.
+            discriminator_update_ratio: Number of discriminator updates per batch
+            generator_update_ratio: Number of generator updates per batch
+            smooth_labels: Whether to use label smoothing
+            smooth_factor: Smoothing factor for labels
 
         Returns:
             G_losses (list): A list of losses for the Generator recorded during training.
@@ -356,61 +364,92 @@ class DCGAN:
 
         console.print("Starting Training Loop...", style=INFO_STYLE)
 
-        # For each epoch
+        real_label_val = (
+            self.real_label - smooth_factor if smooth_labels else self.real_label
+        )
+        fake_label_val = (
+            self.fake_label + smooth_factor if smooth_labels else self.fake_label
+        )
+
         for epoch in range(self.num_epochs):
             # For each batch in the dataloader
             for i, data in enumerate(self.dataloader, 0):
-                ############################
                 # (1) Update D network: maximize log(D(x)) + log(1 - D(G(z)))
-                ###########################
-                ## Train with all-real batch
-                self.netD.zero_grad()
-                # Format batch
-                real_cpu = data[0].to(self.device)
-                b_size = real_cpu.size(0)
-                label = torch.full(
-                    (b_size,), self.real_label, dtype=torch.float, device=self.device
-                )
-                # Forward pass real batch through D
-                output = self.netD(real_cpu).view(-1)
-                # Calculate loss on all-real batch
-                errD_real = self.criterion(output, label)
-                # Calculate gradients for D in backward pass
-                errD_real.backward()
-                D_x = output.mean().item()
+                for _ in range(discriminator_update_ratio):
+                    ## Train with all-real batch
 
-                ## Train with all-fake batch
-                # Generate batch of latent vectors
-                noise = torch.randn(b_size, self.nz, 1, 1, device=self.device)
-                # Generate fake image batch with G
-                fake = self.netG(noise)
-                label.fill_(self.fake_label)
-                # Classify all fake batch with D
-                output = self.netD(fake.detach()).view(-1)
-                # Calculate D's loss on the all-fake batch
-                errD_fake = self.criterion(output, label)
-                # Calculate the gradients for this batch, accumulated (summed) with previous gradients
-                errD_fake.backward()
-                D_G_z1 = output.mean().item()
-                # Compute error of D as sum over the fake and the real batches
-                errD = errD_real + errD_fake
-                # Update D
-                self.optimizerD.step()
+                    self.netD.zero_grad()
+                    # Format batch
+                    real_cpu = data[0].to(self.device)
+                    b_size = real_cpu.size(0)
+                    label = torch.full(
+                        (b_size,), real_label_val, dtype=torch.float, device=self.device
+                    )
 
-                ############################
+                    # Forward pass real batch through D
+                    output = self.netD(real_cpu).view(-1)
+
+                    # Calculate loss on all-real batch
+                    errD_real = self.criterion(output, label)
+
+                    # Calculate gradients for D in backward pass
+                    errD_real.backward()
+                    D_x = output.mean().item()
+
+                    ## Train with all-fake batch
+
+                    # Generate batch of latent vectors
+                    noise = torch.randn(b_size, self.nz, 1, 1, device=self.device)
+
+                    # Generate fake image batch with G
+                    fake = self.netG(noise)
+                    label.fill_(fake_label_val)
+
+                    # Classify all fake batch with D
+                    output = self.netD(fake.detach()).view(-1)
+
+                    # Calculate D's loss on the all-fake batch
+                    errD_fake = self.criterion(output, label)
+
+                    # Retain graph only if it's not the last discriminator update in the loop
+                    retain_graph = _ < (discriminator_update_ratio - 1)
+
+                    # Calculate the gradients for this batch, accumulated (summed) with previous gradients
+                    errD_fake.backward(retain_graph=retain_graph)
+
+                    D_G_z1 = output.mean().item()
+
+                    # Compute error of D as sum over the fake and the real batches
+                    errD = errD_real + errD_fake
+
+                    # Update D
+                    self.optimizerD.step()
+
                 # (2) Update G network: maximize log(D(G(z)))
-                ###########################
-                self.netG.zero_grad()
-                label.fill_(self.real_label)  # fake labels are real for generator cost
-                # Since we just updated D, perform another forward pass of all-fake batch through D
-                output = self.netD(fake).view(-1)
-                # Calculate G's loss based on this output
-                errG = self.criterion(output, label)
-                # Calculate gradients for G
-                errG.backward()
-                D_G_z2 = output.mean().item()
-                # Update G
-                self.optimizerG.step()
+                for _ in range(generator_update_ratio):
+                    self.netG.zero_grad()
+
+                    # Regenerate fake images for this update
+                    noise = torch.randn(b_size, self.nz, 1, 1, device=self.device)
+                    fake = self.netG(noise)
+
+                    label.fill_(
+                        real_label_val
+                    )  # fake labels are real for generator cost
+
+                    # Forward pass of all-fake batch through D
+                    output = self.netD(fake).view(-1)
+
+                    # Calculate G's loss based on this output
+                    errG = self.criterion(output, label)
+
+                    # Retain graph only if it's not the last generator update in the loop
+                    retain_graph = _ < (generator_update_ratio - 1)
+                    errG.backward(retain_graph=retain_graph)
+                    D_G_z2 = output.mean().item()
+
+                    # Update G
+                    self.optimizerG.step()
 
                 # Output training stats
                 if i % 50 == 0:
