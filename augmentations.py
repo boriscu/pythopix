@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, List
 import random
 import cv2
 import numpy as np
@@ -7,10 +7,14 @@ import glob
 import shutil
 import torch
 from torchvision.utils import save_image
+from torchvision import transforms
 import tqdm
 import time
+
+from .labels_operations import convert_to_pixels, read_labels
 from .theme import console, SUCCESS_STYLE, ERROR_STYLE
 from .utils import get_unique_folder_name, get_random_files, check_overlap_and_area
+from PIL import Image
 
 
 def gaussian_noise(
@@ -460,7 +464,7 @@ def generate_fake_image(
             os.makedirs(output_dir, exist_ok=True)
             save_image(fake_image, os.path.join(output_dir, "fake_image.png"))
 
-        return fake_image.unsqueeze(0)
+        return fake_image
 
 
 def generate_fake_images(
@@ -501,3 +505,71 @@ def generate_fake_images(
                 save_image(img, os.path.join(output_dir, f"fake_image_{i}.png"))
 
         return fake_images
+
+
+def augment_images_with_gan(
+    input_folder_path: str,
+    generated_images_dir: str,
+    allowed_classes: List[int] = [0],
+    threshold_width: int = 50,
+    threshold_height: int = 50,
+    num_of_images: int = 200,
+    output_folder: str = "pythopix_results/gan_augmentations",
+) -> None:
+    """
+    Augments images by replacing selected labels with random images from a specified directory.
+
+    Args:
+        input_folder_path (str): Path to the input folder containing images and YOLO labels.
+        generated_images_dir (str): Path to the folder containing generated images for augmentation.
+        allowed_classes (List[int]): List of class IDs that are allowed to be augmented.
+        threshold_width (int): Minimum width in pixels for a label to be augmented.
+        threshold_height (int): Minimum height in pixels for a label to be augmented.
+        num_of_images (int): Number of images to randomly select and augment.
+        output_folder (str): Path to the folder where augmented images will be saved.
+
+    Returns:
+        None
+    """
+
+    image_files = [f for f in os.listdir(input_folder_path) if f.endswith(".png")]
+    selected_images = random.sample(image_files, min(num_of_images, len(image_files)))
+
+    for image_name in tqdm.tqdm(selected_images, desc="Augmenting images"):
+        image_path = os.path.join(input_folder_path, image_name)
+        label_path = image_path.replace(".png", ".txt")
+
+        if not os.path.exists(label_path) or os.path.getsize(label_path) == 0:
+            continue
+
+        with Image.open(image_path).copy() as img:
+            img_width, img_height = img.size
+            labels = read_labels(label_path)
+
+            for class_id, label in labels:
+                if class_id not in allowed_classes:
+                    continue
+
+                pixel_label = convert_to_pixels(label, img_width, img_height)
+                x1, y1, w, h = pixel_label
+
+                if w > threshold_width and h > threshold_height:
+                    generated_images = [
+                        f
+                        for f in os.listdir(generated_images_dir)
+                        if f.endswith(".png")
+                    ]
+
+                    random_image_name = random.choice(generated_images)
+                    random_image_path = os.path.join(
+                        generated_images_dir, random_image_name
+                    )
+
+                    with Image.open(random_image_path) as fake_image:
+                        resized_fake_image = fake_image.resize((w, h))
+
+                        img.paste(resized_fake_image, (x1, y1))
+
+        output_path = os.path.join(output_folder, image_name)
+        os.makedirs(output_folder, exist_ok=True)
+        img.save(output_path)
