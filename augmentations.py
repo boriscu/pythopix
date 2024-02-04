@@ -6,8 +6,7 @@ import os
 import glob
 import shutil
 import torch
-from torchvision.utils import save_image
-from torchvision import transforms
+import torchvision.utils as vutils
 import tqdm
 import time
 
@@ -439,6 +438,10 @@ def generate_fake_image(
     """
     Generates a single fake image using a trained Generator.
 
+    This function also normalizes the generated image's pixel values to [0, 1] using
+    torchvision's make_grid with normalize=True, ensuring the image is properly scaled
+    for saving in a standard image format.
+
     Args:
         generator (torch.nn.Module): The trained Generator model.
         nz (int): Size of the latent z vector.
@@ -447,7 +450,7 @@ def generate_fake_image(
         seed (int): Random seed for reproducibility.
 
     Returns:
-        torch.Tensor: The generated fake image.
+        torch.Tensor: The generated fake image, normalized to the range [0, 1].
     """
     random.seed(seed)
     torch.manual_seed(seed)
@@ -460,9 +463,16 @@ def generate_fake_image(
         noise = torch.randn(1, nz, 1, 1, device=device)
         fake_image = generator(noise)
 
+        # Normalize the image to [0, 1] for visualization and saving
+        # Even though make_grid is typically for multiple images, it can be used here for a single image
+        # to utilize its normalize=True functionality.
+        normalized_image = vutils.make_grid(fake_image, normalize=True)
+
         if save:
             os.makedirs(output_dir, exist_ok=True)
-            save_image(fake_image, os.path.join(output_dir, "fake_image.png"))
+            # Save the normalized image
+            save_path = os.path.join(output_dir, "fake_image.png")
+            vutils.save_image(normalized_image, save_path)
 
         return fake_image
 
@@ -474,9 +484,9 @@ def generate_fake_images(
     save: bool = False,
     output_dir: str = "pythopix_results/dcgan_fake_images",
     seed: int = 999,
-) -> torch.Tensor:
+) -> None:
     """
-    Generates multiple fake images using a trained Generator.
+    Generates multiple fake images using a trained Generator and saves them individually.
 
     Args:
         generator (torch.nn.Module): The trained Generator model.
@@ -485,9 +495,6 @@ def generate_fake_images(
         save (bool): Whether to save the generated images.
         output_dir (str): Directory to save the generated images.
         seed (int): Random seed for reproducibility.
-
-    Returns:
-        torch.Tensor: A batch of fake images.
     """
     random.seed(seed)
     torch.manual_seed(seed)
@@ -495,6 +502,7 @@ def generate_fake_images(
 
     device = "cuda:0" if torch.cuda.is_available() else "cpu"
     generator.eval()
+
     with torch.no_grad():
         noise = torch.randn(num_images, nz, 1, 1, device=device)
         fake_images = generator(noise)
@@ -502,9 +510,11 @@ def generate_fake_images(
         if save:
             os.makedirs(output_dir, exist_ok=True)
             for i, img in enumerate(fake_images):
-                save_image(img, os.path.join(output_dir, f"fake_image_{i}.png"))
-
-        return fake_images
+                # Ensure img is 4D (batch_size=1, channels, height, width)
+                img_4d = img.unsqueeze(0)  # Adds a batch dimension
+                # Normalize and save the image
+                save_path = os.path.join(output_dir, f"fake_image_{i}.png")
+                vutils.save_image(img_4d, save_path, normalize=True)
 
 
 def augment_images_with_gan(

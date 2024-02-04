@@ -208,6 +208,14 @@ class DCGAN:
         """
         Loads the dataset.
 
+        The normalization transform is designed to scale the pixel values of the images to a range
+        of [-1, 1]. This is achieved by first converting the pixel values from the [0, 255] range
+        to [0, 1] (using `transforms.ToTensor()`), and then applying the normalization which
+        centers the data around 0 with a standard deviation of 1 for each channel. Specifically,
+        the transform `transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))` is used, which
+        subtracts 0.5 from each channel (shifting the range to [-0.5, 0.5]) and then divides by
+        0.5, effectively rescaling to [-1, 1].
+
         Returns:
             torch.utils.data.DataLoader: The data loader for the dataset.
         """
@@ -215,8 +223,6 @@ class DCGAN:
             root=self.dataroot,
             transform=transforms.Compose(
                 [
-                    transforms.Resize(self.image_size),
-                    transforms.CenterCrop(self.image_size),
                     transforms.ToTensor(),
                     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
                 ]
