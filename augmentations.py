@@ -525,6 +525,8 @@ def augment_images_with_gan(
     threshold_height: int = 50,
     num_of_images: int = 200,
     output_folder: str = "pythopix_results/gan_augmentations",
+    small_labels: bool = False,
+    extra_area_percentage: int = 10,
 ) -> None:
     """
     Augments images by replacing selected labels with random images from a specified directory.
@@ -537,6 +539,8 @@ def augment_images_with_gan(
         threshold_height (int): Minimum height in pixels for a label to be augmented.
         num_of_images (int): Number of images to randomly select and augment.
         output_folder (str): Path to the folder where augmented images will be saved.
+        small_labels (bool): If True, crops the generated images by a specified percentage before resizing.
+        extra_area_percentage (int): Percentage of the generated image size to be cropped.
 
     Returns:
         None
@@ -576,8 +580,20 @@ def augment_images_with_gan(
                     )
 
                     with Image.open(random_image_path) as fake_image:
-                        resized_fake_image = fake_image.resize((w, h))
+                        if small_labels:
+                            crop_width = fake_image.width * (
+                                1 - extra_area_percentage / 100
+                            )
+                            crop_height = fake_image.height * (
+                                1 - extra_area_percentage / 100
+                            )
+                            left = (fake_image.width - crop_width) / 2
+                            top = (fake_image.height - crop_height) / 2
+                            right = left + crop_width
+                            bottom = top + crop_height
+                            fake_image = fake_image.crop((left, top, right, bottom))
 
+                        resized_fake_image = fake_image.resize((w, h))
                         img.paste(resized_fake_image, (x1, y1))
 
         output_path = os.path.join(output_folder, image_name)

@@ -176,6 +176,7 @@ class DCGAN:
         batch_size: int = 128,
         workers: int = 2,
         num_epochs: int = 5,
+        image_size: int = 128,
     ):
         self.ngpu = ngpu
         self.nz = nz
@@ -186,7 +187,7 @@ class DCGAN:
         self.beta1 = beta1
         self.dataroot = dataroot
         self.batch_size = batch_size
-        self.image_size = 128
+        self.image_size = image_size
         self.workers = workers
         self.num_epochs = num_epochs
         self.device = torch.device(
