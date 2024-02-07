@@ -428,18 +428,26 @@ def save_segmented_metrics_to_csv(
         writer.writerow(box_loss)
 
 
-def visualize_bounding_boxes(image_path: str, save_fig: bool = False) -> None:
+def visualize_bounding_boxes(
+    image_path: str,
+    save_fig: bool = False,
+    big_labels: bool = False,
+    extra_area_percentage: int = 10,
+) -> None:
     """
     Displays an image with its bounding boxes as defined in its corresponding YOLO label file,
-    or saves the image if save_fig is True.
+    optionally with extra area around each box if big_labels is True.
+    Can also save the image if save_fig is True.
 
     Args:
-    image_path (str): Path to the image file.
-    save_fig (bool, optional): If True, saves the image with bounding boxes to a designated folder
-                               instead of displaying it. Defaults to False.
+    - image_path (str): Path to the image file.
+    - save_fig (bool, optional): If True, saves the image with bounding boxes to a designated folder
+                                 instead of displaying it. Defaults to False.
+    - big_labels (bool, optional): If True, adds extra area around the bounding boxes. Defaults to False.
+    - extra_area_percentage (int, optional): The percentage of the extra area to add around each bounding box. Defaults to 10.
 
     Returns:
-    None
+    - None
     """
     image = cv2.imread(image_path)
     if image is None:
@@ -459,10 +467,19 @@ def visualize_bounding_boxes(image_path: str, save_fig: bool = False) -> None:
                 float(x) for x in line.split()
             ]
 
+            # Convert to pixel coordinates
             x = int((x_center - bbox_width / 2) * width)
             y = int((y_center - bbox_height / 2) * height)
             w = int(bbox_width * width)
             h = int(bbox_height * height)
+
+            if big_labels:
+                extra_w = int(w * extra_area_percentage / 100)
+                extra_h = int(h * extra_area_percentage / 100)
+                x = max(0, x - extra_w // 2)
+                y = max(0, y - extra_h // 2)
+                w = min(width, w + extra_w)
+                h = min(height, h + extra_h)
 
             cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
@@ -470,7 +487,6 @@ def visualize_bounding_boxes(image_path: str, save_fig: bool = False) -> None:
         output_folder = "pythopix_results/figs"
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
-        # Extract the filename without extension
         base_filename = os.path.splitext(os.path.basename(image_path))[0]
         output_filename = os.path.join(
             output_folder, f"bbox_on_image_{base_filename}.png"
@@ -478,7 +494,6 @@ def visualize_bounding_boxes(image_path: str, save_fig: bool = False) -> None:
         cv2.imwrite(output_filename, image)
         print(f"Image saved as {output_filename}")
     else:
-        # Display the image
         cv2.imshow("Image with Bounding Boxes", image)
         cv2.waitKey(0)
         cv2.destroyAllWindows()

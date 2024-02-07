@@ -306,6 +306,8 @@ def filter_and_resize_labels(
     resize_aspect_ratio: Tuple[int, int] = (100, 100),
     alpha: float = 0.2,
     allowed_classes: Optional[List[int]] = None,
+    big_labels: bool = False,
+    extra_area_percentage: int = 10,
 ) -> None:
     """
     Processes images from the input folder, filters labels based on non-overlapping and
@@ -318,7 +320,9 @@ def filter_and_resize_labels(
     - min_height (int): Minimum height in pixels for the labels to be considered.
     - resize_aspect_ratio (Tuple[int, int]): The aspect ratio to resize the labels to.
     - alpha (float): Threshold for maximum allowed overlap as a fraction of the first rectangle's area.
-
+    - allowed_classes (List) : Classes that will be extracted
+    - big_labels (bool) : Flag to indicate bigger labels
+    - extra_area_percentage(int) : Percentage of extra width and height that the labels will gain
     Returns:
     - None
     """
@@ -340,12 +344,26 @@ def filter_and_resize_labels(
                 filtered_labels = []
                 for i, (class_id, label) in enumerate(labels):
                     if allowed_classes is None or class_id in allowed_classes:
-                        pixel_label = convert_to_pixels(label, img_width, img_height)
+                        pixel_label = convert_to_pixels(
+                            label,
+                            img_width,
+                            img_height,
+                            big_labels,
+                            extra_area_percentage,
+                        )
                         if pixel_label[2] >= min_width and pixel_label[3] >= min_height:
                             overlap = False
                             for j, (_, other_label) in enumerate(labels):
                                 if i != j and check_overlap_and_area(
-                                    *label, other_label, threshold=alpha
+                                    *pixel_label,
+                                    convert_to_pixels(
+                                        other_label,
+                                        img_width,
+                                        img_height,
+                                        big_labels,
+                                        extra_area_percentage,
+                                    ),
+                                    threshold=alpha,
                                 ):
                                     overlap = True
                                     break
@@ -365,15 +383,10 @@ def filter_and_resize_labels(
                             cropped_image,
                         )
                     except cv2.error as e:
-                        console.print(
-                            f"Error processing {image_file}: {e}", style=ERROR_STYLE
-                        )
+                        print(f"Error processing {image_file}: {e}")
 
     end_time = time.time()
-    console.print(
-        f"Successfuly filtered labels, took {round(end_time-start_time,2)} seconds",
-        style=SUCCESS_STYLE,
-    )
+    print(f"Successfully filtered labels, took {round(end_time-start_time,2)} seconds")
 
 
 def read_labels(label_file: str) -> List[Tuple[int, Tuple[float, float, float, float]]]:
@@ -400,7 +413,11 @@ def read_labels(label_file: str) -> List[Tuple[int, Tuple[float, float, float, f
 
 
 def convert_to_pixels(
-    label: Tuple[float, float, float, float], img_width: int, img_height: int
+    label: Tuple[float, float, float, float],
+    img_width: int,
+    img_height: int,
+    big_labels: bool = False,
+    extra_area_percentage: int = 10,
 ) -> Tuple[int, int, int, int]:
     """
     Converts normalized YOLO label coordinates to pixel coordinates based on the image dimensions.
@@ -409,6 +426,8 @@ def convert_to_pixels(
     - label (Tuple[float, float, float, float]): Normalized bounding box coordinates (x_center, y_center, width, height).
     - img_width (int): The width of the image in pixels.
     - img_height (int): The height of the image in pixels.
+    - big_labels (bool) : Flag to indicate bigger labels
+    - extra_area_percentage(int) : Percentage of extra width and height that the labels will gain
 
     Returns:
     - Tuple[int, int, int, int]: The bounding box coordinates in pixel values (x1, y1, width, height).
@@ -418,6 +437,15 @@ def convert_to_pixels(
     y1 = int((y_center - height / 2) * img_height)
     w = int(width * img_width)
     h = int(height * img_height)
+
+    if big_labels:
+        extra_w = int(w * extra_area_percentage / 100)
+        extra_h = int(h * extra_area_percentage / 100)
+        x1 = max(0, x1 - extra_w // 2)
+        y1 = max(0, y1 - extra_h // 2)
+        w = min(img_width, w + extra_w)
+        h = min(img_height, h + extra_h)
+
     return x1, y1, w, h
 
 
