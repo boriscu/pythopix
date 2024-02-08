@@ -599,3 +599,79 @@ def augment_images_with_gan(
         output_path = os.path.join(output_folder, image_name)
         os.makedirs(output_folder, exist_ok=True)
         img.save(output_path)
+
+
+def augment_image_with_gan(
+    input_image_path: str,
+    generated_images_dir: str,
+    allowed_classes: List[int] = [0],
+    threshold_width: int = 50,
+    threshold_height: int = 50,
+    output_folder: str = "pythopix_results/gan_augmentations",
+    small_labels: bool = False,
+    extra_area_percentage: int = 10,
+) -> None:
+    """
+    Augments an image by replacing selected labels with random images from a specified directory.
+
+    Args:
+        input_image_path (str): Path to the input image and YOLO label.
+        generated_images_dir (str): Path to the folder containing generated images for augmentation.
+        allowed_classes (List[int]): List of class IDs that are allowed to be augmented.
+        threshold_width (int): Minimum width in pixels for a label to be augmented.
+        threshold_height (int): Minimum height in pixels for a label to be augmented.
+        output_folder (str): Path to the folder where augmented images will be saved.
+        small_labels (bool): If True, crops the generated images by a specified percentage before resizing.
+        extra_area_percentage (int): Percentage of the generated image size to be cropped.
+
+    Returns:
+        None
+    """
+
+    image_path = input_image_path
+    label_path = image_path.replace(".png", ".txt")
+
+    if not os.path.exists(label_path) or os.path.getsize(label_path) == 0:
+        return
+
+    with Image.open(image_path).copy() as img:
+        img_width, img_height = img.size
+        labels = read_labels(label_path)
+
+        for class_id, label in labels:
+            if class_id not in allowed_classes:
+                continue
+
+            pixel_label = convert_to_pixels(label, img_width, img_height)
+            x1, y1, w, h = pixel_label
+
+            if w > threshold_width and h > threshold_height:
+                generated_images = [
+                    f for f in os.listdir(generated_images_dir) if f.endswith(".png")
+                ]
+
+                random_image_name = random.choice(generated_images)
+                random_image_path = os.path.join(
+                    generated_images_dir, random_image_name
+                )
+
+                with Image.open(random_image_path) as fake_image:
+                    if small_labels:
+                        crop_width = fake_image.width * (
+                            1 - extra_area_percentage / 100
+                        )
+                        crop_height = fake_image.height * (
+                            1 - extra_area_percentage / 100
+                        )
+                        left = (fake_image.width - crop_width) / 2
+                        top = (fake_image.height - crop_height) / 2
+                        right = left + crop_width
+                        bottom = top + crop_height
+                        fake_image = fake_image.crop((left, top, right, bottom))
+
+                    resized_fake_image = fake_image.resize((w, h))
+                    img.paste(resized_fake_image, (x1, y1))
+
+    output_path = os.path.join(output_folder, os.path.basename(image_path))
+    os.makedirs(output_folder, exist_ok=True)
+    img.save(output_path)

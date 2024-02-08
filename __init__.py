@@ -38,6 +38,8 @@ from .augmentations import (
     make_mosaic_images,
     generate_fake_image,
     generate_fake_images,
+    augment_image_with_gan,
+    augment_images_with_gan,
 )
 
 from .models import DCGAN
@@ -78,4 +80,6 @@ __all__ = [
     "DCGAN",
     "generate_fake_image",
     "generate_fake_images",
+    "augment_image_with_gan",
+    "augment_images_with_gan",
 ]
