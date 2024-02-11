@@ -458,3 +458,28 @@ def crop_and_resize(
     cropped = image[y : y + h, x : x + w]
     resized = cv2.resize(cropped, resize_aspect_ratio)
     return resized
+
+
+def create_yolo_labels_for_images(directory: str, class_id: int) -> None:
+    """
+    Scan through the specified directory and create YOLO label .txt files for PNG images
+    that do not have corresponding label files. The created label file will contain a given
+    class ID and bounding box coordinates covering the whole image.
+
+    Parameters:
+    - directory (str): The path to the directory containing the images.
+    - class_id (int): The class ID to be used in the YOLO label files.
+
+    The function does not return anything but creates .txt files as needed.
+    """
+    for file in os.listdir(directory):
+        if file.endswith(".png"):
+            label_file_path = os.path.join(
+                directory, os.path.splitext(file)[0] + ".txt"
+            )
+
+            if not os.path.exists(label_file_path):
+                yolo_format = f"{class_id} 0.5 0.5 1 1\n"
+
+                with open(label_file_path, "w") as label_file:
+                    label_file.write(yolo_format)

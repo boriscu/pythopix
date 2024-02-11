@@ -21,6 +21,7 @@ from .labels_operations import (
     convert_to_pixels,
     read_labels,
     filter_and_resize_labels,
+    create_yolo_labels_for_images,
 )
 from .comparison import (
     compare_labels,
@@ -82,4 +83,5 @@ __all__ = [
     "generate_fake_images",
     "augment_image_with_gan",
     "augment_images_with_gan",
+    "create_yolo_labels_for_images",
 ]
