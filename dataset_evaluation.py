@@ -170,10 +170,21 @@ def plot_label_size_distribution(
 
     widths, heights = extract_label_sizes(label_files, allowed_classes=allowed_classes)
 
-    average_width = sum(widths) / len(widths) if widths else 0
-    average_height = sum(heights) / len(heights) if heights else 0
-    print(f"Average Width: {average_width:.2f} pixels")
-    print(f"Average Height: {average_height:.2f} pixels")
+    average_width = np.mean(widths) if widths else 0
+    average_height = np.mean(heights) if heights else 0
+    std_dev_width = np.std(widths) if widths else 0
+    std_dev_height = np.std(heights) if heights else 0
+    variance_width = np.var(widths) if widths else 0
+    variance_height = np.var(heights) if heights else 0
+    range_width = np.ptp(widths) if widths else 0  # Peak-to-peak (max-min)
+    range_height = np.ptp(heights) if heights else 0
+
+    print(
+        f"Average Width: {average_width:.2f} pixels, Standard Deviation: {std_dev_width:.2f}, Variance: {variance_width:.2f}, Range: {range_width}"
+    )
+    print(
+        f"Average Height: {average_height:.2f} pixels, Standard Deviation: {std_dev_height:.2f}, Variance: {variance_height:.2f}, Range: {range_height}"
+    )
 
     fig, axs = plt.subplots(1, 2, figsize=(12, 6))
     axs[0].hist(widths, bins=30, color="blue", alpha=0.7)

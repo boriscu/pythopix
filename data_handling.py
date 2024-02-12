@@ -1,7 +1,10 @@
 import csv
 import tqdm
-from typing import List
+from typing import List, Tuple
 from .theme import console, INFO_STYLE
+import cv2
+import os
+import numpy as np
 
 
 class ImageData:
@@ -61,3 +64,44 @@ def export_to_csv(
                     image_data.box_loss,
                 ]
             )
+
+
+def resize_images_in_folder(
+    folder_path: str,
+    target_width: int,
+    target_height: int,
+    width_deviation: int,
+    height_deviation: int,
+) -> None:
+    """
+    Resizes all PNG images in the specified folder to random sizes based on target dimensions and deviations.
+
+    The function randomly selects a new width and height for each image within the specified deviation from the target
+    dimensions. This approach helps introduce variability in the dataset while roughly maintaining the average
+    dimensions.
+
+    Parameters:
+    - folder_path (str): Path to the folder containing the images to be resized.
+    - target_width (int): Target width for the resizing operation.
+    - target_height (int): Target height for the resizing operation.
+    - width_deviation (int): Allowed deviation from the target width to introduce randomness.
+    - height_deviation (int): Allowed deviation from the target height to introduce randomness.
+
+    Returns:
+    - None: The function modifies the images in place and does not return a value.
+    """
+    for filename in tqdm.tqdm(os.listdir(folder_path), desc="Resizing images"):
+        if filename.endswith(".png"):
+            image_path = os.path.join(folder_path, filename)
+            image = cv2.imread(image_path)
+
+            new_width = np.random.randint(
+                target_width - width_deviation, target_width + width_deviation + 1
+            )
+            new_height = np.random.randint(
+                target_height - height_deviation, target_height + height_deviation + 1
+            )
+
+            resized_image = cv2.resize(image, (new_width, new_height))
+
+            cv2.imwrite(image_path, resized_image)

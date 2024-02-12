@@ -9,7 +9,7 @@ from .dataset_evaluation import (
     plot_label_ratios,
     plot_label_size_distribution,
 )
-from .data_handling import export_to_csv
+from .data_handling import export_to_csv, resize_images_in_folder
 from .model_operations import process_image, segregate_images
 from .utils import custom_sort_key, check_overlap_and_area
 from .labels_operations import (
@@ -84,4 +84,5 @@ __all__ = [
     "augment_image_with_gan",
     "augment_images_with_gan",
     "create_yolo_labels_for_images",
+    "resize_images_in_folder",
 ]
