@@ -67,14 +67,16 @@ def read_yolo_labels(file_path: str) -> List[Label]:
     return labels
 
 
-def extract_label_sizes(label_files: List[str]) -> Tuple[List[int], List[int]]:
+def extract_label_sizes(
+    label_files: List[str], allowed_classes: List[int] = [0]
+) -> Tuple[List[int], List[int]]:
     """
-    Extracts the widths and heights of bounding boxes in pixels from YOLO label files.
+    Extracts the widths and heights of bounding boxes in pixels from YOLO label files for specified allowed classes.
 
     This function iterates through a list of YOLO label files, reading the normalized
     bounding box dimensions (width and height) for each box in each file. It then
     converts these normalized dimensions to pixel dimensions based on the corresponding
-    image size.
+    image size, filtering by allowed classes.
 
     Note:
     This function assumes that each label file has a corresponding image file in the
@@ -82,10 +84,11 @@ def extract_label_sizes(label_files: List[str]) -> Tuple[List[int], List[int]]:
 
     Parameters:
     - label_files (List[str]): A list of file paths to YOLO label files.
+    - allowed_classes (List[int]): A list of class IDs for which bounding box dimensions should be extracted.
 
     Returns:
     - Tuple[List[int], List[int]]: Two lists containing the widths and heights of the
-                                   bounding boxes in pixels, respectively.
+                                   bounding boxes in pixels, respectively, for the allowed classes.
     """
     widths, heights = [], []
     for label_file in tqdm(label_files, desc="Reading label sizes"):
@@ -96,13 +99,12 @@ def extract_label_sizes(label_files: List[str]) -> Tuple[List[int], List[int]]:
 
             with open(label_file, "r") as file:
                 for line in file:
-                    _, x_center, y_center, width, height = map(float, line.split())
-                    pixel_width = int(width * img_width)
-                    pixel_height = int(height * img_height)
-                    widths.append(pixel_width)
-                    heights.append(pixel_height)
-        else:
-            print(f"Image file corresponding to {label_file} not found.")
+                    class_id, _, _, width, height = map(float, line.split())
+                    if int(class_id) in allowed_classes:
+                        pixel_width = int(width * img_width)
+                        pixel_height = int(height * img_height)
+                        widths.append(pixel_width)
+                        heights.append(pixel_height)
 
     return widths, heights
 

@@ -140,19 +140,22 @@ def plot_bb_distribution(label_paths: List[str], save: bool = False) -> None:
 
 
 def plot_label_size_distribution(
-    input_folder: str, save: bool = False, show: bool = True
+    input_folder: str,
+    allowed_classes: List[int] = [0],
+    save: bool = False,
+    show: bool = True,
 ) -> None:
     """
-    Plots the distribution of label widths and heights in pixels from YOLO label files.
+    Plots the distribution of label widths and heights in pixels from YOLO label files for specified allowed classes.
 
     This function reads YOLO label files in the specified input folder, extracts
-    the widths and heights of bounding boxes in pixels, and plots their distributions in
-    two subplots. If the save flag is set, it saves the plot to a specified path.
+    the widths and heights of bounding boxes in pixels for the allowed classes, and plots their distributions in
+    two subplots. Additionally, it prints the average width and height. If the save flag is set, it saves the plot to a specified path.
 
     Parameters:
     - input_folder (str): Path to the folder containing images and YOLO label files.
-    - save (bool): If True, saves the plot to 'pythopix_results/figs/label_size_distribution.png'.
-                   Defaults to False.
+    - allowed_classes (List[int], optional): A list of class IDs for which bounding box sizes should be calculated.
+    - save (bool): If True, saves the plot to 'pythopix_results/figs/label_size_distribution.png'. Defaults to False.
     - show (bool): If True, shows the plot. Defaults to True
 
     Returns:
@@ -165,7 +168,12 @@ def plot_label_size_distribution(
         if f.endswith(".txt")
     ]
 
-    widths, heights = extract_label_sizes(label_files)
+    widths, heights = extract_label_sizes(label_files, allowed_classes=allowed_classes)
+
+    average_width = sum(widths) / len(widths) if widths else 0
+    average_height = sum(heights) / len(heights) if heights else 0
+    print(f"Average Width: {average_width:.2f} pixels")
+    print(f"Average Height: {average_height:.2f} pixels")
 
     fig, axs = plt.subplots(1, 2, figsize=(12, 6))
     axs[0].hist(widths, bins=30, color="blue", alpha=0.7)
@@ -187,10 +195,15 @@ def plot_label_size_distribution(
         plt.show()
 
 
-def plot_label_ratios(input_folder: str, save: bool = False, show: bool = True) -> None:
+def plot_label_ratios(
+    input_folder: str,
+    allowed_classes: List[int] = [0],
+    save: bool = False,
+    show: bool = True,
+) -> None:
     """
     Plots and optionally saves the distribution of label aspect ratios (width/height)
-    in a dataset, as extracted from YOLO label files.
+    in a dataset, as extracted from YOLO label files, for specified allowed classes.
 
     This function reads each label file, finds the corresponding image file to
     obtain actual dimensions, calculates the aspect ratio of the bounding boxes,
@@ -198,10 +211,9 @@ def plot_label_ratios(input_folder: str, save: bool = False, show: bool = True) 
 
     Parameters:
     - input_folder (str): Path to the folder containing images and their corresponding YOLO label files.
-    - save (bool, optional): If set to `True`, the plot is saved to 'pythopix_results/figs/label_ratios.png'.
-                             Defaults to `False`.
+    - allowed_classes (List[int], optional): A list of class IDs for which bounding box aspect ratios should be calculated.
+    - save (bool, optional): If set to `True`, the plot is saved to 'pythopix_results/figs/label_ratios.png'. Defaults to `False`.
     - show (bool): If True, shows the plot. Defaults to True
-
 
     Returns:
     - None: Based on the `save` parameter, the function either displays the plot or saves it to a specified directory.
@@ -212,11 +224,14 @@ def plot_label_ratios(input_folder: str, save: bool = False, show: bool = True) 
         for f in os.listdir(input_folder)
         if f.endswith(".txt")
     ]
-    widths, heights = extract_label_sizes(label_files)
+    widths, heights = extract_label_sizes(label_files, allowed_classes=allowed_classes)
 
     ratios = [
         w / h if h != 0 else 0 for w, h in zip(widths, heights)
     ]  # Avoid division by zero
+
+    average_aspect_ratio = sum(ratios) / len(ratios) if ratios else 0
+    print(f"Average Aspect Ratio: {average_aspect_ratio:.2f}")
 
     plt.figure(figsize=(8, 6))
     plt.hist(ratios, bins=30, color="purple", alpha=0.7)
