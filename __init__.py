@@ -8,6 +8,7 @@ from .dataset_evaluation import (
     visualize_bounding_boxes,
     plot_label_ratios,
     plot_label_size_distribution,
+    analyze_image_dimensions,
 )
 from .data_handling import export_to_csv, resize_images_in_folder
 from .model_operations import process_image, segregate_images
@@ -41,6 +42,7 @@ from .augmentations import (
     generate_fake_images,
     augment_image_with_gan,
     augment_images_with_gan,
+    generate_padded_images,
 )
 
 from .models import DCGAN
@@ -85,4 +87,6 @@ __all__ = [
     "augment_images_with_gan",
     "create_yolo_labels_for_images",
     "resize_images_in_folder",
+    "analyze_image_dimensions",
+    "generate_padded_images",
 ]
