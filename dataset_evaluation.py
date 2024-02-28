@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from ultralytics import YOLO
 from typing import Optional, List, Dict, Tuple
 import numpy as np
+from PIL import Image
 
 from .data_handling import export_to_csv
 from .model_operations import process_image, segregate_images
@@ -523,3 +524,57 @@ def visualize_bounding_boxes(
         cv2.imshow("Image with Bounding Boxes", image)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
+
+
+def analyze_image_dimensions(input_folder: str, plot: bool = False, save: bool = False):
+    """
+    Analyzes the dimensions of PNG images in a specified folder.
+
+    Parameters:
+    - input_folder (str): The path to the folder containing the PNG images.
+    - plot (bool): If True, plots the width and height distribution of the images.
+
+    This function goes through all PNG images in the specified folder, optionally
+    plots their width and height distribution if `plot` is True, and prints out the
+    average width and height of the images.
+    """
+    widths = []
+    heights = []
+
+    for file in os.listdir(input_folder):
+        if file.endswith(".png"):
+            img_path = os.path.join(input_folder, file)
+            with Image.open(img_path) as img:
+                width, height = img.size
+                widths.append(width)
+                heights.append(height)
+
+    plt.figure(figsize=(12, 6))
+
+    ax1 = plt.subplot(1, 2, 1)
+    plt.hist(widths, bins=20, color="skyblue")
+    plt.title("Width Distribution")
+    plt.xlabel("Width")
+    plt.ylabel("Frequency")
+    ax1.ticklabel_format(useOffset=False, style="plain")
+
+    ax2 = plt.subplot(1, 2, 2)
+    plt.hist(heights, bins=20, color="lightgreen")
+    plt.title("Height Distribution")
+    plt.xlabel("Height")
+    ax2.ticklabel_format(useOffset=False, style="plain")
+
+    plt.tight_layout()
+
+    if save:
+        save_path = "pythopix_results/figs"
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+        plt.savefig(f"{save_path}/image_dimensions.png")
+    if plot:
+        plt.show()
+
+    avg_width = np.mean(widths) if widths else 0
+    avg_height = np.mean(heights) if heights else 0
+    print(f"Average Width: {avg_width:.2f}")
+    print(f"Average Height: {avg_height:.2f}")

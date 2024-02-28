@@ -675,3 +675,62 @@ def augment_image_with_gan(
     output_path = os.path.join(output_folder, os.path.basename(image_path))
     os.makedirs(output_folder, exist_ok=True)
     img.save(output_path)
+
+
+import os
+import cv2
+import numpy as np
+from typing import Tuple, Optional
+
+
+def generate_padded_images(
+    input_folder: str,
+    output_folder: str = "pythopix_results/padded_images",
+    height: int = 1080,
+    width: int = 1920,
+    padding_type: str = "gray",
+) -> None:
+    """
+    Generates padded images with a specified background and saves them to an output folder along with their YOLO label files.
+
+    Parameters:
+    - input_folder: The path to the folder containing the input images.
+    - output_folder: The path to the folder where the padded images and YOLO label files will be saved. Defaults to "pythopix_results/padded_images".
+    - height, width: The dimensions of the output images.
+    - padding_type: The type of padding to apply. If "average", the padding color is the average color of the image. Otherwise, a gray background is used.
+
+    The function iterates through all images in the input folder, centers them on a background of the specified dimensions, and saves the result to the output folder. A YOLO label file is also generated for each image.
+    """
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+
+    for filename in tqdm.tqdm(os.listdir(input_folder), desc="Padding images"):
+        if filename.lower().endswith((".png", ".jpg", ".jpeg")):
+            img_path = os.path.join(input_folder, filename)
+            img = cv2.imread(img_path)
+
+            if padding_type == "average":
+                average_color = np.mean(img, axis=(0, 1))
+            else:
+                average_color = (128, 128, 128)  # Gray color
+
+            background = np.full((height, width, 3), average_color, dtype=np.uint8)
+
+            y_center = (height - img.shape[0]) // 2
+            x_center = (width - img.shape[1]) // 2
+
+            background[
+                y_center : y_center + img.shape[0], x_center : x_center + img.shape[1]
+            ] = img
+
+            output_img_path = os.path.join(output_folder, filename)
+            cv2.imwrite(output_img_path, background)
+
+            label_filename = os.path.splitext(filename)[0] + ".txt"
+            label_path = os.path.join(output_folder, label_filename)
+            with open(label_path, "w") as label_file:
+                x_norm = (x_center + img.shape[1] / 2) / width
+                y_norm = (y_center + img.shape[0] / 2) / height
+                w_norm = img.shape[1] / width
+                h_norm = img.shape[0] / height
+                label_file.write(f"0 {x_norm} {y_norm} {w_norm} {h_norm}\n")
