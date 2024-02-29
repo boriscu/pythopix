@@ -9,6 +9,7 @@ from .dataset_evaluation import (
     plot_label_ratios,
     plot_label_size_distribution,
     analyze_image_dimensions,
+    show_fg_mask,
 )
 from .data_handling import export_to_csv, resize_images_in_folder
 from .model_operations import process_image, segregate_images
@@ -89,4 +90,5 @@ __all__ = [
     "resize_images_in_folder",
     "analyze_image_dimensions",
     "generate_padded_images",
+    "show_fg_mask",
 ]
