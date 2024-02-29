@@ -1,4 +1,5 @@
 import csv
+import math
 import os
 import time
 import cv2
@@ -16,8 +17,10 @@ from .utils import custom_sort_key
 from .theme import console, INFO_STYLE, SUCCESS_STYLE
 from .labels_operations import (
     Label,
+    convert_to_pixels,
     extract_label_files,
     extract_label_sizes,
+    read_labels,
     read_yolo_labels,
 )
 
@@ -578,3 +581,160 @@ def analyze_image_dimensions(input_folder: str, plot: bool = False, save: bool =
     avg_height = np.mean(heights) if heights else 0
     print(f"Average Width: {avg_width:.2f}")
     print(f"Average Height: {avg_height:.2f}")
+
+
+def bbox_iou(box1, box2, xywh=True, GIoU=False, DIoU=False, CIoU=False, eps=1e-7):
+    """
+    Calculate Intersection over Union (IoU) of box1(1, 4) to box2(n, 4).
+
+    Args:
+        box1 (torch.Tensor): A tensor representing a single bounding box with shape (1, 4).
+        box2 (torch.Tensor): A tensor representing n bounding boxes with shape (n, 4).
+        xywh (bool, optional): If True, input boxes are in (x, y, w, h) format. If False, input boxes are in
+                               (x1, y1, x2, y2) format. Defaults to True.
+        GIoU (bool, optional): If True, calculate Generalized IoU. Defaults to False.
+        DIoU (bool, optional): If True, calculate Distance IoU. Defaults to False.
+        CIoU (bool, optional): If True, calculate Complete IoU. Defaults to False.
+        eps (float, optional): A small value to avoid division by zero. Defaults to 1e-7.
+
+    Returns:
+        (torch.Tensor): IoU, GIoU, DIoU, or CIoU values depending on the specified flags.
+    """
+
+    # Get the coordinates of bounding boxes
+    if xywh:  # transform from xywh to xyxy
+        (x1, y1, w1, h1), (x2, y2, w2, h2) = box1.chunk(4, -1), box2.chunk(4, -1)
+        w1_, h1_, w2_, h2_ = w1 / 2, h1 / 2, w2 / 2, h2 / 2
+        b1_x1, b1_x2, b1_y1, b1_y2 = x1 - w1_, x1 + w1_, y1 - h1_, y1 + h1_
+        b2_x1, b2_x2, b2_y1, b2_y2 = x2 - w2_, x2 + w2_, y2 - h2_, y2 + h2_
+    else:  # x1, y1, x2, y2 = box1
+        b1_x1, b1_y1, b1_x2, b1_y2 = box1.chunk(4, -1)
+        b2_x1, b2_y1, b2_x2, b2_y2 = box2.chunk(4, -1)
+        w1, h1 = b1_x2 - b1_x1, b1_y2 - b1_y1 + eps
+        w2, h2 = b2_x2 - b2_x1, b2_y2 - b2_y1 + eps
+
+    # Intersection area
+    inter = (b1_x2.minimum(b2_x2) - b1_x1.maximum(b2_x1)).clamp_(0) * (
+        b1_y2.minimum(b2_y2) - b1_y1.maximum(b2_y1)
+    ).clamp_(0)
+
+    # Union Area
+    union = w1 * h1 + w2 * h2 - inter + eps
+
+    # IoU
+    iou = inter / union
+    if CIoU or DIoU or GIoU:
+        cw = b1_x2.maximum(b2_x2) - b1_x1.minimum(
+            b2_x1
+        )  # convex (smallest enclosing box) width
+        ch = b1_y2.maximum(b2_y2) - b1_y1.minimum(b2_y1)  # convex height
+        if CIoU or DIoU:  # Distance or Complete IoU https://arxiv.org/abs/1911.08287v1
+            c2 = cw**2 + ch**2 + eps  # convex diagonal squared
+            rho2 = (
+                (b2_x1 + b2_x2 - b1_x1 - b1_x2) ** 2
+                + (b2_y1 + b2_y2 - b1_y1 - b1_y2) ** 2
+            ) / 4  # center dist ** 2
+            if (
+                CIoU
+            ):  # https://github.com/Zzh-tju/DIoU-SSD-pytorch/blob/master/utils/box/box_utils.py#L47
+                v = (4 / math.pi**2) * (
+                    torch.atan(w2 / h2) - torch.atan(w1 / h1)
+                ).pow(2)
+                with torch.no_grad():
+                    alpha = v / (v - iou + (1 + eps))
+                return iou - (rho2 / c2 + v * alpha)  # CIoU
+            return iou - rho2 / c2  # DIoU
+        c_area = cw * ch + eps  # convex area
+        return (
+            iou - (c_area - union) / c_area
+        )  # GIoU https://arxiv.org/pdf/1902.09630.pdf
+    return iou  # IoU
+
+
+def show_fg_mask(
+    image_path: str,
+    label_path: str,
+    top_k: int = 13,
+    transparent: bool = True,
+    grid_size: int = 50,
+):
+    if not os.path.exists(label_path):
+        raise FileNotFoundError(f"The label file {label_path} does not exist.")
+    if not os.path.exists(image_path):
+        raise FileNotFoundError(f"The image file {image_path} does not exist.")
+
+    gt_boxes = read_labels(label_path)
+    image = cv2.imread(image_path)
+    if image is None:
+        raise ValueError(f"Failed to load image from {image_path}.")
+
+    img_height, img_width = image.shape[:2]
+    converted_labels = []
+    for label_data in gt_boxes:
+        class_id, label = label_data
+        x1, y1, w, h = convert_to_pixels(label, img_width, img_height)
+        converted_labels.append((x1, y1, x1 + w, y1 + h))
+
+    gt_boxes_tensor = torch.tensor(converted_labels, dtype=torch.float32)
+
+    anchors = []
+    cell_width, cell_height = img_width // grid_size, img_height // grid_size
+    for x in range(grid_size):
+        for y in range(grid_size):
+            center_x, center_y = (
+                x * cell_width + cell_width // 2,
+                y * cell_height + cell_height // 2,
+            )
+            anchors.append(
+                [
+                    center_x - cell_width / 2,
+                    center_y - cell_height / 2,
+                    center_x + cell_width / 2,
+                    center_y + cell_height / 2,
+                ]
+            )
+
+    anchors_tensor = torch.tensor(anchors, dtype=torch.float32)
+
+    iou_scores = torch.zeros((len(anchors), len(gt_boxes_tensor)))
+    for i, anchor in enumerate(anchors_tensor):
+        ious = bbox_iou(anchor.unsqueeze(0), gt_boxes_tensor, xywh=False)
+        iou_scores[i] = ious
+
+    iou_scores_masked_for_topk = iou_scores.masked_fill(iou_scores == 0, float("-inf"))
+    top_k_values, top_k_indices = torch.topk(
+        iou_scores_masked_for_topk, top_k, dim=0, largest=True
+    )
+
+    for i, anchor in enumerate(anchors):
+        pt1 = (int(anchor[0]), int(anchor[1]))
+        pt2 = (int(anchor[2]), int(anchor[3]))
+
+        is_top_k_and_non_zero = (iou_scores[i].unsqueeze(0) == top_k_values) & (
+            iou_scores[i] > 0
+        )
+
+        if transparent:
+            if is_top_k_and_non_zero.any():
+                max_iou_score = iou_scores[i].max().item()
+                iou_score_text = f"{max_iou_score:.2f}"
+                text_position = ((pt1[0] + pt2[0]) // 2, (pt1[1] + pt2[1]) // 2)
+                cv2.rectangle(image, pt1, pt2, (0, 255, 0), 2)
+                cv2.putText(
+                    image,
+                    iou_score_text,
+                    text_position,
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.5,
+                    (0, 255, 0),
+                    2,
+                )
+            else:
+                cv2.rectangle(image, pt1, pt2, (0, 0, 255), 1)
+        else:
+            if not is_top_k_and_non_zero.any():
+                cv2.rectangle(image, pt1, pt2, (0, 0, 0), cv2.FILLED)
+
+    cv2.imshow("Image with Grid, Anchors, FG Mask, and GT Boxes", image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
