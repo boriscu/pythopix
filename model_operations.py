@@ -253,11 +253,11 @@ def process_image(
         avg_iou = ious.mean()
         box_loss = 1 - avg_iou.item()  # Box loss is 1 - IoU
     elif gt_boxes.nelement() == 0 and predicted_boxes.nelement() != 0:
-        box_loss = "No GT, FP detected"
+        box_loss = 1  # Maximum penalty for false positives when no ground truth exists
     elif gt_boxes.nelement() != 0 and predicted_boxes.nelement() == 0:
-        box_loss = "Inf"
+        box_loss = 1  # Maximum penalty for missing all ground truth boxes
     else:
-        box_loss = None  # No ground truth or no prediction
+        box_loss = 0
 
     return ImageData(image_path, false_positives, false_negatives, box_loss), {
         "predicted_boxes": predicted_boxes,

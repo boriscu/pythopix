@@ -1,8 +1,10 @@
 import csv
+import json
 import math
 import os
 import time
 import cv2
+from matplotlib.ticker import MaxNLocator
 import torch
 from tqdm import tqdm
 import matplotlib.pyplot as plt
@@ -268,6 +270,7 @@ def calculate_segmented_metrics(
     model: YOLO = None,
     model_path: str = None,
     segment_number: int = 4,
+    save_data: bool = False,
 ) -> Dict[str, Tuple[float, float, float]]:
     """
     Processes a folder of images, dividing bounding boxes into segments based on their sizes,
@@ -317,9 +320,15 @@ def calculate_segmented_metrics(
         for i in range(segment_number)
     ]
     # Initialize metrics storage
-    metrics_by_segment = {f"{seg[0]:.2f}-{seg[1]:.2f}": [] for seg in segments}
+    metrics_by_segment = {
+        f"{seg[0]:.2f}-{seg[1]:.2f}": {
+            "false_positives_count": 0,
+            "false_negatives_count": 0,
+            "total_box_loss": 0,
+        }
+        for seg in segments
+    }
 
-    # Assign Bounding Boxes to Segments and Calculate Metrics
     for label_file in tqdm(label_files, desc="Calculating metrics"):
         image_file = label_file.replace(".txt", ".png")
         labels = read_yolo_labels(label_file)
@@ -330,82 +339,109 @@ def calculate_segmented_metrics(
                 if seg[0] <= area < seg[1]:
                     segment_key = f"{seg[0]:.2f}-{seg[1]:.2f}"
                     image_data, _ = process_image(image_file, model, verbose=False)
-                    metrics_by_segment[segment_key].append(image_data)
+                    metrics_by_segment[segment_key]["false_positives_count"] += float(
+                        image_data.false_positives
+                    )
+                    metrics_by_segment[segment_key]["false_negatives_count"] += float(
+                        image_data.false_negatives
+                    )
+                    metrics_by_segment[segment_key]["total_box_loss"] += float(
+                        image_data.box_loss
+                    )
 
-    for segment, data in tqdm(
-        metrics_by_segment.items(), desc="Calculating average metrics by segment"
-    ):
-        if data:
-            valid_fp = [
-                d.false_positives
-                for d in data
-                if isinstance(d.false_positives, (int, float))
-            ]
-            valid_fn = [
-                d.false_negatives
-                for d in data
-                if isinstance(d.false_negatives, (int, float))
-            ]
-            valid_bl = [
-                d.box_loss for d in data if isinstance(d.box_loss, (int, float))
-            ]
+    for segment, data in metrics_by_segment.items():
+        data["total_box_loss"] = round(data["total_box_loss"], 2)
 
-            avg_false_positives = round(np.mean(valid_fp) if valid_fp else 0, 2)
-            avg_false_negatives = round(np.mean(valid_fn) if valid_fn else 0, 2)
-            avg_box_loss = round(np.mean(valid_bl) if valid_bl else 0, 2)
+    if save_data:
+        os.makedirs("pythopix_results", exist_ok=True)
+        output_file_path = "pythopix_results/segmented_metrics.json"
+        with open(output_file_path, "w") as json_file:
+            json.dump(metrics_by_segment, json_file, indent=4)
 
-            metrics_by_segment[segment] = (
-                avg_false_positives,
-                avg_false_negatives,
-                avg_box_loss,
-            )
-        else:
-            metrics_by_segment[segment] = (0, 0, 0)
+        print(f"Metrics saved to {output_file_path}")
 
     return metrics_by_segment
 
 
 def plot_metrics_by_segment(
-    metrics_by_segment: Dict[str, Tuple[float, float, float]], save: bool = False
+    metrics_path: str,
+    save: bool = False,
+    image_height: int = None,
+    image_width: int = None,
 ) -> None:
     """
     Plots and optionally saves three bar charts for the given metrics by segment.
     There will be one chart for false positives, one for false negatives, and one for box loss.
 
     Args:
-    metrics_by_segment (Dict[str, Tuple[float, float, float]]): A dictionary with segment ranges as keys and tuples of metrics as values.
-    save (bool, optional): If True, saves the plots to the 'pythopix_results' folder. Defaults to False.
+        metrics_path (str): Path to the JSON file containing metrics.
+        save (bool, optional): If True, saves the plots to the 'pythopix_results' folder. Defaults to False.
+        image_height (int, optional): Height of the images in pixels.
+        image_width (int, optional): Width of the images in pixels.
     """
-    segments = [
-        f"{float(seg.split('-')[0])*100:.2f}-{float(seg.split('-')[1])*100:.2f}%"
-        for seg in metrics_by_segment.keys()
-    ]
-    false_positives = [metrics[0] for metrics in metrics_by_segment.values()]
-    false_negatives = [metrics[1] for metrics in metrics_by_segment.values()]
-    box_losses = [metrics[2] for metrics in metrics_by_segment.values()]
+    with open(metrics_path, "r") as file:
+        metrics_by_segment = json.load(file)
 
-    # Create the directory for saving results if it doesn't exist
+    if image_height is not None and image_width is not None:
+        image_area = image_height * image_width
+        segments = [
+            f"{int(float(seg.split('-')[0]) * image_area)}-{int(float(seg.split('-')[1]) * image_area)}"
+            for seg in metrics_by_segment.keys()
+        ]
+    else:
+        segments = [
+            f"{float(seg.split('-')[0])*100:.2f}-{float(seg.split('-')[1])*100:.2f}%"
+            for seg in metrics_by_segment.keys()
+        ]
+    false_positives = [
+        metrics["false_positives_count"] for metrics in metrics_by_segment.values()
+    ]
+    false_negatives = [
+        metrics["false_negatives_count"] for metrics in metrics_by_segment.values()
+    ]
+    box_losses = [metrics["total_box_loss"] for metrics in metrics_by_segment.values()]
+
     if save:
         os.makedirs("pythopix_results", exist_ok=True)
 
     # Plotting False Positives
     plt.figure(figsize=(10, 6))
     plt.bar(segments, false_positives, color="#56baf0")
-    plt.xlabel("Segments (% of original image)")
+    plt.xlabel(
+        "Segments"
+        + (
+            " (area in pixels)"
+            if image_height is not None and image_width is not None
+            else " (% of original image)"
+        )
+    )
     plt.ylabel("False Positives")
     plt.title("False Positives by Segment")
+    plt.gca().yaxis.set_major_locator(
+        MaxNLocator(integer=True)
+    )  # Ensure y-axis has only whole numbers
     plt.xticks(rotation=45)
     plt.tight_layout()
     if save:
         plt.savefig("pythopix_results/false_positives_by_segment.png")
     plt.show()
 
-    # Plotting False Negatives
+    # Adjusted plotting for False Negatives with whole number y-ticks
     plt.figure(figsize=(10, 6))
     plt.bar(segments, false_negatives, color="#a3e38c")
-    plt.xlabel("Segments (% of original image)")
+    plt.xlabel(
+        "Segments"
+        + (
+            " (area in pixels)"
+            if image_height is not None and image_width is not None
+            else " (% of original image)"
+        )
+    )
     plt.ylabel("False Negatives")
     plt.title("False Negatives by Segment")
+    plt.gca().yaxis.set_major_locator(
+        MaxNLocator(integer=True)
+    )  # Ensure y-axis has only whole numbers
     plt.xticks(rotation=45)
     plt.tight_layout()
     if save:
@@ -415,7 +451,14 @@ def plot_metrics_by_segment(
     # Plotting Box Loss
     plt.figure(figsize=(10, 6))
     plt.bar(segments, box_losses, color="#050c26")
-    plt.xlabel("Segments (% of original image)")
+    plt.xlabel(
+        "Segments"
+        + (
+            " (area in pixels)"
+            if image_height is not None and image_width is not None
+            else " (% of original image)"
+        )
+    )
     plt.ylabel("Box Loss")
     plt.title("Box Loss by Segment")
     plt.xticks(rotation=45)

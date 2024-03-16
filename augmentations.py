@@ -51,11 +51,9 @@ def gaussian_noise(
 
         sigma = random.uniform(*sigma_range)
 
-        # Generate Gaussian noise
         gauss = np.random.normal(mean, sigma, (h, w, c)) * frequency
         gauss = gauss.reshape(h, w, c)
 
-        # Add the Gaussian noise to the image
         noisy_image = image + gauss
 
         noisy_image = np.clip(noisy_image, 0, 255)
@@ -115,7 +113,10 @@ augmentation_funcs = {"gaussian": gaussian_noise, "random_erase": random_erasing
 
 
 def apply_augmentations(
-    input_folder: str, augmentation_type: str, output_folder: str = None, **kwargs
+    input_folder: str,
+    augmentation_type: str,
+    output_folder: str = "pythopix_results/augmentations",
+    **kwargs,
 ):
     """
     Applies a specified type of augmentation to all images in a given folder and saves the results along with their
@@ -888,3 +889,42 @@ def geometric_augmentations(
         augmented_img = maybe_fliplr(augmented_img, fliplr)
 
     return augmented_img
+
+
+def mixup_augmentations(
+    image_path1: str,
+    image_path2: str,
+    output_dir: str = "pythopix_results/augmentations",
+) -> Image.Image:
+    """
+    Takes two image paths, sets their transparency to 50%, overlays them together,
+    and saves the resulting image to a specified directory. Additionally, the overlaid
+    image is returned.
+
+    Parameters:
+    - image_path1 (str): Path to the first image.
+    - image_path2 (str): Path to the second image.
+    - output_dir (str): Directory path where the overlaid image will be saved. Defaults to 'pythopix_results/augmentations'.
+
+    Returns:
+    - Image.Image: The overlaid image with 50% transparency for both input images.
+    """
+    image1 = Image.open(image_path1).convert("RGBA")
+    image2 = Image.open(image_path2).convert("RGBA")
+
+    image2 = image2.resize(image1.size)
+
+    alpha = 0.5
+    image1.putalpha(int(255 * alpha))
+    image2.putalpha(int(255 * alpha))
+
+    overlaid_image = Image.alpha_composite(image1, image2)
+
+    import os
+
+    os.makedirs(output_dir, exist_ok=True)
+
+    output_path = os.path.join(output_dir, "overlaid_image.png")
+    overlaid_image.save(output_path, format="PNG")
+
+    return overlaid_image
