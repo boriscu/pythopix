@@ -414,16 +414,13 @@ def plot_metrics_by_segment(
     )
     plt.ylabel("False Positives")
     plt.title("False Positives by Segment")
-    plt.gca().yaxis.set_major_locator(
-        MaxNLocator(integer=True)
-    )  # Ensure y-axis has only whole numbers
+    plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
     plt.xticks(rotation=45)
     plt.tight_layout()
     if save:
         plt.savefig("pythopix_results/false_positives_by_segment.png")
     plt.show()
 
-    # Adjusted plotting for False Negatives with whole number y-ticks
     plt.figure(figsize=(10, 6))
     plt.bar(segments, false_negatives, color="#a3e38c")
     plt.xlabel(
@@ -436,16 +433,13 @@ def plot_metrics_by_segment(
     )
     plt.ylabel("False Negatives")
     plt.title("False Negatives by Segment")
-    plt.gca().yaxis.set_major_locator(
-        MaxNLocator(integer=True)
-    )  # Ensure y-axis has only whole numbers
+    plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
     plt.xticks(rotation=45)
     plt.tight_layout()
     if save:
         plt.savefig("pythopix_results/false_negatives_by_segment.png")
     plt.show()
 
-    # Plotting Box Loss
     plt.figure(figsize=(10, 6))
     plt.bar(segments, box_losses, color="#050c26")
     plt.xlabel(
@@ -463,6 +457,107 @@ def plot_metrics_by_segment(
     if save:
         plt.savefig("pythopix_results/box_loss_by_segment.png")
     plt.show()
+
+
+def plot_multiple_metrics_by_segment(
+    metrics_paths: list,
+    save: bool = False,
+    image_height: int = None,
+    image_width: int = None,
+    labels: list = None,
+) -> None:
+    """
+    Plots and optionally saves separate bar charts for false positives, false negatives, and box loss
+    from multiple metrics files for each segment, with segments optionally displayed in pixel size.
+    Custom labels for the legend can be provided.
+
+    Args:
+        metrics_paths (list): Paths to the JSON files containing metrics.
+        save (bool, optional): If True, saves the plots to the 'pythopix_results' folder. Defaults to False.
+        image_height (int, optional): Height of the images in pixels.
+        image_width (int, optional): Width of the images in pixels.
+        labels (list, optional): Custom labels for each metrics file in the legend.
+    """
+    all_metrics = []
+    for path in metrics_paths:
+        with open(path, "r") as file:
+            metrics = json.load(file)
+            all_metrics.append(metrics)
+
+    if labels is None or len(labels) != len(metrics_paths):
+        labels = [f"Metrics {i+1}" for i in range(len(metrics_paths))]
+
+    if image_height is not None and image_width is not None:
+        image_area = image_height * image_width
+        segments = [
+            f"{int(float(seg.split('-')[0]) * image_area)}-{int(float(seg.split('-')[1]) * image_area)}"
+            for seg in all_metrics[0].keys()
+        ]
+    else:
+        segments = [
+            f"{float(seg.split('-')[0])*100:.2f}-{float(seg.split('-')[1])*100:.2f}%"
+            for seg in all_metrics[0].keys()
+        ]
+
+    data_sets = {
+        "False Positives": [
+            [metrics[seg]["false_positives_count"] for seg in metrics]
+            for metrics in all_metrics
+        ],
+        "False Negatives": [
+            [metrics[seg]["false_negatives_count"] for seg in metrics]
+            for metrics in all_metrics
+        ],
+        "Box Loss": [
+            [metrics[seg]["total_box_loss"] for seg in metrics]
+            for metrics in all_metrics
+        ],
+    }
+
+    colors = ["#56baf0", "#a3e38c", "#ff6347"]
+    n_groups = len(segments)
+    bar_width = 0.2
+    opacity = 0.8
+
+    for data_label, data_values in data_sets.items():
+        fig, ax = plt.subplots(figsize=(10, 6))
+        index = np.arange(n_groups)
+
+        for i, (data_set, label) in enumerate(zip(data_values, labels)):
+            ax.bar(
+                index + i * bar_width,
+                data_set,
+                bar_width,
+                alpha=opacity,
+                color=colors[i % len(colors)],
+                label=label,
+            )
+
+        ax.set_xlabel(
+            "Segments"
+            + (
+                " (pixels)"
+                if image_height is not None and image_width is not None
+                else " (% of original image)"
+            )
+        )
+        ax.set_ylabel(data_label)
+        ax.set_title(f"{data_label} by Segment")
+        ax.set_xticks(index + bar_width / 2 * (len(metrics_paths) - 1))
+        ax.set_xticklabels(segments)
+        ax.legend(loc="upper right")
+        ax.yaxis.set_major_locator(
+            MaxNLocator(integer=True if "Loss" not in data_label else False)
+        )
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+
+        if save:
+            save_path = f"pythopix_results/{data_label.replace(' ', '_').lower()}_by_segment.png"
+            if not os.path.exists("pythopix_results"):
+                os.makedirs("pythopix_results")
+            plt.savefig(save_path)
+        plt.show()
 
 
 def save_segmented_metrics_to_csv(
