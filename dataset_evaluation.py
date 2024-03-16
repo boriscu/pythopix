@@ -271,36 +271,32 @@ def calculate_segmented_metrics(
     model_path: str = None,
     segment_number: int = 4,
     save_data: bool = False,
-) -> Dict[str, Tuple[float, float, float]]:
+) -> Dict[str, Dict[str, float]]:
     """
     Processes a folder of images, dividing bounding boxes into segments based on their sizes,
-    and calculates average metrics for each segment.
+    calculates metrics for each segment, and counts the total number of labels per segment.
 
     Args:
     folder_path (str): Path to the folder containing images and corresponding YOLO label files.
     model (YOLO, optional): An instance of the YOLO model. If None, model is loaded from model_path.
     model_path (str, optional): Path to load the YOLO model, used if model is None.
     segment_number (int, optional): Number of segments to divide the bounding boxes into based on their sizes.
+    save_data (bool, optional): If True, exports the metrics to a JSON file.
 
     Returns:
-    Dict[str, Tuple[float, float, float]]: A dictionary where the key is the segment range (e.g., '0-0.25'),
-    and the value is a tuple containing the average false positives, false negatives, and box loss for that segment.
+    Dict[str, Dict[str, float]]: A dictionary where the key is the segment range (e.g., '0-0.25'),
+    and the value is a dictionary containing the counts of false positives, false negatives, total box loss, and total label count for that segment.
     """
 
     if model is None:
         if model_path is not None:
             model = YOLO(model_path)
         else:
-            console.print(
-                "Model path not provided or not found. Using default YOLO model.",
-                style=INFO_STYLE,
-            )
+            print("Model path not provided or not found. Using default YOLO model.")
             model = YOLO("yolov8n")
 
-    # Extract label files
     label_files = extract_label_files(folder_path, label_type="txt")
 
-    # Calculate Bounding Box Sizes
     all_bb_areas = []
     for label_file in label_files:
         labels = read_yolo_labels(label_file)
@@ -308,7 +304,6 @@ def calculate_segmented_metrics(
             area = calculate_bb_area(label)
             all_bb_areas.append(area)
 
-    # Segment Bounding Boxes
     max_area = max(all_bb_areas)
     min_area = min(all_bb_areas)
     segment_size = (max_area - min_area) / segment_number
@@ -319,12 +314,13 @@ def calculate_segmented_metrics(
         )
         for i in range(segment_number)
     ]
-    # Initialize metrics storage
+
     metrics_by_segment = {
         f"{seg[0]:.2f}-{seg[1]:.2f}": {
             "false_positives_count": 0,
             "false_negatives_count": 0,
             "total_box_loss": 0,
+            "label_count": 0,
         }
         for seg in segments
     }
@@ -348,6 +344,7 @@ def calculate_segmented_metrics(
                     metrics_by_segment[segment_key]["total_box_loss"] += float(
                         image_data.box_loss
                     )
+                    metrics_by_segment[segment_key]["label_count"] += 1
 
     for segment, data in metrics_by_segment.items():
         data["total_box_loss"] = round(data["total_box_loss"], 2)
