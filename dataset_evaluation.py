@@ -348,6 +348,15 @@ def calculate_segmented_metrics(
 
     for segment, data in metrics_by_segment.items():
         data["total_box_loss"] = round(data["total_box_loss"], 2)
+        data["average_false_positives_count"] = round(
+            data["false_positives_count"] / data["label_count"], 2
+        )
+        data["average_false_negatives_count"] = round(
+            data["false_negatives_count"] / data["label_count"], 2
+        )
+        data["average_box_loss"] = round(
+            data["total_box_loss"] / data["label_count"], 2
+        )
 
     if save_data:
         os.makedirs("pythopix_results", exist_ok=True)
@@ -365,6 +374,7 @@ def plot_metrics_by_segment(
     save: bool = False,
     image_height: int = None,
     image_width: int = None,
+    avg: bool = True,
 ) -> None:
     """
     Plots and optionally saves three bar charts for the given metrics by segment.
@@ -376,6 +386,16 @@ def plot_metrics_by_segment(
         image_height (int, optional): Height of the images in pixels.
         image_width (int, optional): Width of the images in pixels.
     """
+    false_positives_key = (
+        "average_false_positives_count" if avg else "false_positives_count"
+    )
+
+    false_negatives_key = (
+        "average_false_negatives_count" if avg else "false_negatives_count"
+    )
+
+    box_loss_key = "average_box_loss" if avg else "total_box_loss"
+
     with open(metrics_path, "r") as file:
         metrics_by_segment = json.load(file)
 
@@ -391,12 +411,12 @@ def plot_metrics_by_segment(
             for seg in metrics_by_segment.keys()
         ]
     false_positives = [
-        metrics["false_positives_count"] for metrics in metrics_by_segment.values()
+        metrics[false_positives_key] for metrics in metrics_by_segment.values()
     ]
     false_negatives = [
-        metrics["false_negatives_count"] for metrics in metrics_by_segment.values()
+        metrics[false_negatives_key] for metrics in metrics_by_segment.values()
     ]
-    box_losses = [metrics["total_box_loss"] for metrics in metrics_by_segment.values()]
+    box_losses = [metrics[box_loss_key] for metrics in metrics_by_segment.values()]
 
     if save:
         os.makedirs("pythopix_results", exist_ok=True)
@@ -433,7 +453,8 @@ def plot_metrics_by_segment(
     )
     plt.ylabel("False Negatives")
     plt.title("False Negatives by Segment")
-    plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
+    if not avg:
+        plt.gca().yaxis.set_major_locator(MaxNLocator(integer=True))
     plt.xticks(rotation=45)
     plt.tight_layout()
     if save:
@@ -465,6 +486,7 @@ def plot_multiple_metrics_by_segment(
     image_height: int = None,
     image_width: int = None,
     labels: list = None,
+    avg: bool = True,
 ) -> None:
     """
     Plots and optionally saves separate bar charts for false positives, false negatives, and box loss
@@ -478,6 +500,17 @@ def plot_multiple_metrics_by_segment(
         image_width (int, optional): Width of the images in pixels.
         labels (list, optional): Custom labels for each metrics file in the legend.
     """
+
+    false_positives_key = (
+        "average_false_positives_count" if avg else "false_positives_count"
+    )
+
+    false_negatives_key = (
+        "average_false_negatives_count" if avg else "false_negatives_count"
+    )
+
+    box_loss_key = "average_box_loss" if avg else "total_box_loss"
+
     all_metrics = []
     for path in metrics_paths:
         with open(path, "r") as file:
@@ -500,17 +533,16 @@ def plot_multiple_metrics_by_segment(
         ]
 
     data_sets = {
-        "False Positives": [
-            [metrics[seg]["false_positives_count"] for seg in metrics]
+        "False Positives/Labels" if avg else "False Positives": [
+            [metrics[seg][false_positives_key] for seg in metrics]
             for metrics in all_metrics
         ],
-        "False Negatives": [
-            [metrics[seg]["false_negatives_count"] for seg in metrics]
+        "False Negatives/Labels" if avg else "False Negatives": [
+            [metrics[seg][false_negatives_key] for seg in metrics]
             for metrics in all_metrics
         ],
-        "Box Loss": [
-            [metrics[seg]["total_box_loss"] for seg in metrics]
-            for metrics in all_metrics
+        "Box Loss/Labels" if avg else "Box Loss": [
+            [metrics[seg][box_loss_key] for seg in metrics] for metrics in all_metrics
         ],
     }
 
@@ -546,14 +578,15 @@ def plot_multiple_metrics_by_segment(
         ax.set_xticks(index + bar_width / 2 * (len(metrics_paths) - 1))
         ax.set_xticklabels(segments)
         ax.legend(loc="upper right")
-        ax.yaxis.set_major_locator(
-            MaxNLocator(integer=True if "Loss" not in data_label else False)
-        )
+        if not avg:
+            ax.yaxis.set_major_locator(
+                MaxNLocator(integer=True if "Loss" not in data_label else False)
+            )
         plt.xticks(rotation=45)
         plt.tight_layout()
 
         if save:
-            save_path = f"pythopix_results/{data_label.replace(' ', '_').lower()}_by_segment.png"
+            save_path = f"pythopix_results/{data_label.replace('/', '_').lower()}_by_segment.png"
             if not os.path.exists("pythopix_results"):
                 os.makedirs("pythopix_results")
             plt.savefig(save_path)
