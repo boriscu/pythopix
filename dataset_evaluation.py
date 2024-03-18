@@ -219,7 +219,9 @@ def plot_label_size_distribution(
 
     data = pd.DataFrame({"Width": widths, "Height": heights})
     g = sns.jointplot(data=data, x="Width", y="Height", kind="kde", space=0, fill=True)
-    g.plot_joint(plt.scatter, color="b", s=5, alpha=0.6)
+    if scatter:
+        g.plot_joint(plt.scatter, color="b", s=5, alpha=0.6)
+
     g.set_axis_labels("Width (pixels)", "Height (pixels)", fontsize=12)
     g.figure.suptitle("Width vs Height Label Distribution")
     if save:
