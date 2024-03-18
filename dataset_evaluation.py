@@ -12,6 +12,8 @@ from ultralytics import YOLO
 from typing import Optional, List, Dict, Tuple
 import numpy as np
 from PIL import Image
+import seaborn as sns
+import pandas as pd
 
 from .data_handling import export_to_csv
 from .model_operations import process_image, segregate_images
@@ -192,22 +194,33 @@ def plot_label_size_distribution(
         f"Average Height: {average_height:.2f} pixels, Standard Deviation: {std_dev_height:.2f}, Variance: {variance_height:.2f}, Range: {range_height}"
     )
 
-    fig, axs = plt.subplots(1, 2, figsize=(12, 6))
-    axs[0].hist(widths, bins=30, color="blue", alpha=0.7)
-    axs[0].set_title("Label Width Distribution in Pixels")
-    axs[0].set_xlabel("Width (pixels)")
-    axs[0].set_ylabel("Frequency")
-
-    axs[1].hist(heights, bins=30, color="green", alpha=0.7)
-    axs[1].set_title("Label Height Distribution in Pixels")
-    axs[1].set_xlabel("Height (pixels)")
-
-    plt.tight_layout()
-
+    plt.figure(figsize=(6, 4))
+    plt.hist(widths, bins=30, color="blue", alpha=0.7)
+    plt.title("Label Width Distribution in Pixels")
+    plt.xlabel("Width (pixels)")
+    plt.ylabel("Frequency")
     if save:
         os.makedirs("pythopix_results/figs", exist_ok=True)
-        plt.savefig("pythopix_results/figs/label_size_distribution.png")
+        plt.savefig("pythopix_results/figs/label_width_distribution.png")
+    if show:
+        plt.show()
 
+    plt.figure(figsize=(6, 4))
+    plt.hist(heights, bins=30, color="green", alpha=0.7)
+    plt.title("Label Height Distribution in Pixels")
+    plt.xlabel("Height (pixels)")
+    plt.ylabel("Frequency")
+    if save:
+        plt.savefig("pythopix_results/figs/label_height_distribution.png")
+    if show:
+        plt.show()
+
+    data = pd.DataFrame({"Width": widths, "Height": heights})
+    g = sns.jointplot(data=data, x="Width", y="Height", kind="kde", space=0, fill=True)
+    g.set_axis_labels("Width (pixels)", "Height (pixels)", fontsize=12)
+    g.figure.suptitle("Width vs Height Label Distribution")
+    if save:
+        g.figure.savefig("pythopix_results/figs/width_vs_height_kde_distribution.png")
     if show:
         plt.show()
 
