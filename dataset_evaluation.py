@@ -385,6 +385,7 @@ def plot_metrics_by_segment(
         save (bool, optional): If True, saves the plots to the 'pythopix_results' folder. Defaults to False.
         image_height (int, optional): Height of the images in pixels.
         image_width (int, optional): Width of the images in pixels.
+        avg(bool) : If set, instead of metrics count avg values will be shown on y axis. Default to True
     """
     false_positives_key = (
         "average_false_positives_count" if avg else "false_positives_count"
@@ -499,6 +500,7 @@ def plot_multiple_metrics_by_segment(
         image_height (int, optional): Height of the images in pixels.
         image_width (int, optional): Width of the images in pixels.
         labels (list, optional): Custom labels for each metrics file in the legend.
+        avg(bool) : If set, instead of metrics count avg values will be shown on y axis. Default to True
     """
 
     false_positives_key = (
