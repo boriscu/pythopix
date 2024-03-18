@@ -152,6 +152,7 @@ def plot_label_size_distribution(
     allowed_classes: List[int] = [0],
     save: bool = False,
     show: bool = True,
+    scatter: bool = False,
 ) -> None:
     """
     Plots the distribution of label widths and heights in pixels from YOLO label files for specified allowed classes.
@@ -165,6 +166,7 @@ def plot_label_size_distribution(
     - allowed_classes (List[int], optional): A list of class IDs for which bounding box sizes should be calculated.
     - save (bool): If True, saves the plot to 'pythopix_results/figs/label_size_distribution.png'. Defaults to False.
     - show (bool): If True, shows the plot. Defaults to True
+    - scatter (bool): If True, shows scatter points. Default to False
 
     Returns:
     - None
@@ -217,6 +219,7 @@ def plot_label_size_distribution(
 
     data = pd.DataFrame({"Width": widths, "Height": heights})
     g = sns.jointplot(data=data, x="Width", y="Height", kind="kde", space=0, fill=True)
+    g.plot_joint(plt.scatter, color="b", s=5, alpha=0.6)
     g.set_axis_labels("Width (pixels)", "Height (pixels)", fontsize=12)
     g.figure.suptitle("Width vs Height Label Distribution")
     if save:
